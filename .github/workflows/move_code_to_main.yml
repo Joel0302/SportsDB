@@ -1,121 +1,61 @@
-name: Move-Code-To-Deploy-PROD
+name: Master-Script-On-Merge
 on:
   push:
     branches:
       - 'main'
-    paths:
-      - 'dags/**'
-      - 'utils/**'
-      - 'sql/**'
-      - 'plugins/**'
-  pull_request:
-    branches:
-      - 'main'
-    paths:
-      - 'dags/**'
-      - 'utils/**'
-      - 'sql/**'
-      - 'plugins/**'
-  workflow_dispatch:
 
-jobs:  
-  Move-Code-To-Deploy-PROD:    
+jobs:
+  Create-Final-Master:
+    # This condition ensures it only runs if the push was a PR merge
+    if: github.event.head_commit.message != '' 
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4         
+        uses: actions/checkout@v4
         with:
-          fetch-depth: 0 
-        
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.8' 
-          
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          
-      - name: 1Find Difference between branch and commit
-        id: Finddiff        
-        run: |
-          DIFF_CONTENT=$(git diff --name-status ${{ github.event.before }}...${{ github.sha }} | xargs) 
-          echo "fileswithdepth=$DIFF_CONTENT" >> $GITHUB_OUTPUT
-        shell: bash
+          fetch-depth: 0 # Essential to see previous commits for the diff
 
-      - name: 2get changed files
-        id: getfile
+      - name: Generate Master Script
         run: |
-          CHANGED_FILES=$(git diff-tree --no-commit-id --name-only -r ${{ github.sha }} | xargs)
-          echo "files=$CHANGED_FILES" >> $GITHUB_OUTPUT
+          # 1. Configuration
+          RELEASE_DIR="RELEASE_SCRIPTS/Sprint160"
+          BASE_ADHOC="$RELEASE_DIR/Adhoc_Script.sql"
+          MASTER_NAME="Master_Release_Final.sql"
+          MASTER_PATH="$RELEASE_DIR/$MASTER_NAME"
 
-      - name: 2echo output
-        run: |
-          echo "Changed files: ${{ steps.getfile.outputs.files }}" 
-        
-      - name: Move the files to temp directory
-        id: Movefiles    
-        run: |        
-          echo "Files in previous versus current version: ${{ steps.Finddiff.outputs.fileswithdepth }} "    
-          mkdir -p temp_dags/{utils,plugins,sql}  
-          touch temp_dags/delete_list.txt
-          myarray="${{ steps.Finddiff.outputs.fileswithdepth }}"
-          changelist=(${myarray// / })
-          len=${#changelist[@]}
+          mkdir -p "$RELEASE_DIR"
+
+          # 2. Start Master File with Adhoc_Script content
+          if [ -f "$BASE_ADHOC" ]; then
+            echo "-- BASELINE FROM ADHOC_SCRIPT.SQL --" > "$MASTER_PATH"
+            cat "$BASE_ADHOC" >> "$MASTER_PATH"
+            echo -e "\n\n-- ####### MERGED CONTENT START #######\n" >> "$MASTER_PATH"
+          else
+            echo "-- START OF MASTER SCRIPT --" > "$MASTER_PATH"
+          fi
+
+          # 3. Identify files changed in the merge
+          # We compare the current commit (HEAD) with its parent (HEAD^)
+          CHANGED_FILES=$(git diff --name-only HEAD^ HEAD | grep '\.sql$' | grep -v "$RELEASE_DIR" || true)
+
+          if [ -z "$CHANGED_FILES" ]; then
+            echo "No outer SQL changes detected in this merge."
+          else
+            for file in $CHANGED_FILES; do
+              if [ -f "$file" ]; then
+                echo "Adding content from: $file"
+                echo "-- Source: $file" >> "$MASTER_PATH"
+                cat "$file" >> "$MASTER_PATH"
+                echo -e "\nGO\n" >> "$MASTER_PATH"
+              fi
+            done
+          fi
+
+          # 4. Push the final script to the main branch
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
           
-          for ((i=0; i<${len}; i++)) ; do
-            case "${changelist[$i]}" in
-              A | M | C | T | "R100" )
-                if [ "${changelist[$i]}" = "R100" ]; then  
-                  change_file="${changelist[$i+2]}"
-                else
-                  change_file="${changelist[$i+1]}"
-                fi
-                
-                file_path=$(dirname "$change_file")
-                file_name=$(basename "$change_file")
-
-                # --- NEW DELETION LOGIC ---
-                if [[ "$file_name" == retd_* ]]; then
-                  target_name="${file_name#retd_}"
-                  # Determine S3 path based on folder
-                  if [[ "$change_file" == dags/* ]]; then
-                    echo "dags/$target_name" >> temp_dags/delete_list.txt
-                  else
-                    echo "dags/$file_path/$target_name" >> temp_dags/delete_list.txt
-                  fi
-                  echo "Marked for deletion: $target_name"
-                  continue
-                fi
-                # --- END DELETION LOGIC ---
-
-                IFS='/'
-                read -a root <<< "${file_path}"
-                case  "${root[0]}" in 
-                  "dags") 
-                    cp "${change_file}" temp_dags/ 
-                    ;;
-                  sql | utils) 
-                    mkdir -p temp_dags/${file_path}  
-                    cp --parents "${change_file}" "temp_dags"   
-                    ;; 
-                esac
-                ;;
-            esac
-          done
-          
-          ls -R temp_dags/
-          cd temp_dags
-        
-      - name: Upload S3
-        id: upload
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_DEFAULT_REGION: ${{ secrets.AWS_REGION}}
-          AWS_S3_BUCKET: ${{ secrets.AWS_S3_BUCKET_PROD }}   
-          DEVOPS_DIR: devops 
-          directory: "temp_dags"
-        run: |
-          pip install boto3
-          python ${{ env.DEVOPS_DIR }}/upload_content_to_s3.py
+          git add "$MASTER_PATH"
+          # Use --allow-empty in case no files were actually changed
+          git commit -m "chore: update master script after merge [skip ci]" || echo "No changes to commit"
+          git push origin main

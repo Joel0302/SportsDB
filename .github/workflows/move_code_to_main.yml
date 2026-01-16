@@ -1,0 +1,121 @@
+name: Move-Code-To-Deploy-PROD
+on:
+  push:
+    branches:
+      - 'main'
+    paths:
+      - 'dags/**'
+      - 'utils/**'
+      - 'sql/**'
+      - 'plugins/**'
+  pull_request:
+    branches:
+      - 'main'
+    paths:
+      - 'dags/**'
+      - 'utils/**'
+      - 'sql/**'
+      - 'plugins/**'
+  workflow_dispatch:
+
+jobs:  
+  Move-Code-To-Deploy-PROD:    
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4         
+        with:
+          fetch-depth: 0 
+        
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.8' 
+          
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          
+      - name: 1Find Difference between branch and commit
+        id: Finddiff        
+        run: |
+          DIFF_CONTENT=$(git diff --name-status ${{ github.event.before }}...${{ github.sha }} | xargs) 
+          echo "fileswithdepth=$DIFF_CONTENT" >> $GITHUB_OUTPUT
+        shell: bash
+
+      - name: 2get changed files
+        id: getfile
+        run: |
+          CHANGED_FILES=$(git diff-tree --no-commit-id --name-only -r ${{ github.sha }} | xargs)
+          echo "files=$CHANGED_FILES" >> $GITHUB_OUTPUT
+
+      - name: 2echo output
+        run: |
+          echo "Changed files: ${{ steps.getfile.outputs.files }}" 
+        
+      - name: Move the files to temp directory
+        id: Movefiles    
+        run: |        
+          echo "Files in previous versus current version: ${{ steps.Finddiff.outputs.fileswithdepth }} "    
+          mkdir -p temp_dags/{utils,plugins,sql}  
+          touch temp_dags/delete_list.txt
+          myarray="${{ steps.Finddiff.outputs.fileswithdepth }}"
+          changelist=(${myarray// / })
+          len=${#changelist[@]}
+          
+          for ((i=0; i<${len}; i++)) ; do
+            case "${changelist[$i]}" in
+              A | M | C | T | "R100" )
+                if [ "${changelist[$i]}" = "R100" ]; then  
+                  change_file="${changelist[$i+2]}"
+                else
+                  change_file="${changelist[$i+1]}"
+                fi
+                
+                file_path=$(dirname "$change_file")
+                file_name=$(basename "$change_file")
+
+                # --- NEW DELETION LOGIC ---
+                if [[ "$file_name" == retd_* ]]; then
+                  target_name="${file_name#retd_}"
+                  # Determine S3 path based on folder
+                  if [[ "$change_file" == dags/* ]]; then
+                    echo "dags/$target_name" >> temp_dags/delete_list.txt
+                  else
+                    echo "dags/$file_path/$target_name" >> temp_dags/delete_list.txt
+                  fi
+                  echo "Marked for deletion: $target_name"
+                  continue
+                fi
+                # --- END DELETION LOGIC ---
+
+                IFS='/'
+                read -a root <<< "${file_path}"
+                case  "${root[0]}" in 
+                  "dags") 
+                    cp "${change_file}" temp_dags/ 
+                    ;;
+                  sql | utils) 
+                    mkdir -p temp_dags/${file_path}  
+                    cp --parents "${change_file}" "temp_dags"   
+                    ;; 
+                esac
+                ;;
+            esac
+          done
+          
+          ls -R temp_dags/
+          cd temp_dags
+        
+      - name: Upload S3
+        id: upload
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${{ secrets.AWS_REGION}}
+          AWS_S3_BUCKET: ${{ secrets.AWS_S3_BUCKET_PROD }}   
+          DEVOPS_DIR: devops 
+          directory: "temp_dags"
+        run: |
+          pip install boto3
+          python ${{ env.DEVOPS_DIR }}/upload_content_to_s3.py

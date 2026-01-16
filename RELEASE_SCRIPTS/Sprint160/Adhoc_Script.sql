@@ -1,6 +1,8 @@
 Create or Replace dbo_Schema.table1
 ();
 
+Alter table table1
+add id varchar(255);
 
 --alter statement...
 

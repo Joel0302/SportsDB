@@ -36,7 +36,7 @@ jobs:
 
           # 3. Identify files changed in the merge
           # We compare the current commit (HEAD) with its parent (HEAD^)
-          CHANGED_FILES=$(git diff --name-only HEAD^ HEAD -- '*.sql' ':!DBO_SCHEMA/*' ':!STG_HIST_SCHEMA/*' ':!$RELEASE_DIR/*' || true)
+          CHANGED_FILES=$(git diff --name-only HEAD^ HEAD -- '*.sql' ':!DBO_SCHEMA/*' ':!STG_HIST_SCHEMA/*' ":!$RELEASE_DIR/*" || true)
 
           if [ -z "$CHANGED_FILES" ]; then
             echo "No outer SQL changes detected in this merge."

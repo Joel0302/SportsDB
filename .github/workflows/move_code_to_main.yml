@@ -19,43 +19,54 @@ jobs:
         run: |
           # 1. Configuration
           RELEASE_DIR="RELEASE_SCRIPTS/Sprint160"
-          BASE_ADHOC="$RELEASE_DIR/Adhoc_Script.sql"
+          BASE_ADHOC="$RELEASE_DIR/Adhoc_script.sql"
           MASTER_NAME="DDL_CONSOLIDATED.sql"
           MASTER_PATH="$RELEASE_DIR/$MASTER_NAME"
 
           mkdir -p "$RELEASE_DIR"
+          
+          # Clean up old consolidated file if it exists to prevent "input is output" errors
+          rm -f "$MASTER_PATH"
 
           # 2. Start Master File with Adhoc_Script content
           if [ -f "$BASE_ADHOC" ]; then
             echo "-- BASELINE FROM ADHOC_SCRIPT.SQL --" > "$MASTER_PATH"
             cat "$BASE_ADHOC" >> "$MASTER_PATH"
             echo -e "\n\n-- ####### MERGED CONTENT START #######\n" >> "$MASTER_PATH"
+            echo "Successfully initialized with $BASE_ADHOC"
           else
-            echo "-- START OF MASTER SCRIPT --" > "$MASTER_PATH"
+            echo "-- START OF MASTER SCRIPT (No Adhoc Found) --" > "$MASTER_PATH"
+            echo "Warning: Adhoc_script.sql not found at $BASE_ADHOC"
           fi
 
           # 3. Identify files changed in the merge
-          # We compare the current commit (HEAD) with its parent (HEAD^)
-          CHANGED_FILES=$(git diff --name-only HEAD^ HEAD -- '*.sql' ':!DBO_SCHEMA/*' ':!STG_HIST_SCHEMA/*' ":!$RELEASE_DIR/*" || true)
+          # Logic: Include all .sql files, but EXCLUDE the target file itself and specific schemas
+          # Note: We use double quotes for the MASTER_PATH exclusion to allow variable expansion
+          CHANGED_FILES=$(git diff --name-only HEAD^ HEAD -- '*.sql' ":!$MASTER_PATH" ':!DBO_SCHEMA/*' ':!STG_HIST_SCHEMA/*' || true)
 
           if [ -z "$CHANGED_FILES" ]; then
-            echo "No outer SQL changes detected in this merge."
+            echo "No additional SQL changes detected in this merge."
           else
             for file in $CHANGED_FILES; do
-              if [ -f "$file" ]; then
+              # Final safety check: skip if file is somehow the master path or the adhoc itself (already added)
+              if [ -f "$file" ] && [ "$file" != "$MASTER_PATH" ] && [ "$file" != "$BASE_ADHOC" ]; then
                 echo "Adding content from: $file"
-                echo "-- Source: $file" >> "$MASTER_PATH"
-                cat "$file" >> "$MASTER_PATH"
-                echo -e "\n\n" >> "$MASTER_PATH"
+                {
+                  echo "--------------------------------------------------"
+                  echo "-- Source: $file"
+                  echo "--------------------------------------------------"
+                  cat "$file"
+                  echo -e "\n" 
+                } >> "$MASTER_PATH"
               fi
             done
           fi
 
-          # 4. Push the final script to the main branch
+          # 4. Push the final script back to the main branch
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           
           git add "$MASTER_PATH"
-          # Use --allow-empty in case no files were actually changed
-          git commit -m "chore: update master script after merge [skip ci]" || echo "No changes to commit"
+          # Use --allow-empty and [skip ci] to prevent infinite loops
+          git commit -m "chore: update DDL_CONSOLIDATED.sql after merge [skip ci]" || echo "No changes to commit"
           git push origin main

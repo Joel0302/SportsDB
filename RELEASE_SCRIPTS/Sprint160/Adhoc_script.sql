@@ -13,7 +13,7 @@ CREATE TABLE dbo.Departments (
 
 
 CREATE TABLE STG_HIST_SCHEMA.Stg_Hist_Employees (
-    EmployeeID VARCHAR(20),                 
+    EmployeeID VARCHAR(50),                 
     FirstName VARCHAR(100),
     LastName VARCHAR(100),
     Email VARCHAR(255),

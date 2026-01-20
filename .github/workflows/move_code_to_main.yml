@@ -46,7 +46,7 @@ jobs:
                 echo "Adding content from: $file"
                 echo "-- Source: $file" >> "$MASTER_PATH"
                 cat "$file" >> "$MASTER_PATH"
-                echo -e "\nGO\n" >> "$MASTER_PATH"
+                echo -e "\n\n" >> "$MASTER_PATH"
               fi
             done
           fi

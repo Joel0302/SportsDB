@@ -14,7 +14,7 @@ CREATE TABLE dbo.Departments (
 
 
 CREATE TABLE STG_HIST_SCHEMA.Stg_Hist_Employees (
-    EmployeeID VARCHAR(20),                 
+    EmployeeID VARCHAR(50),                 
     FirstName VARCHAR(100),
     LastName VARCHAR(100),
     Email VARCHAR(255),
@@ -28,4 +28,12 @@ GRANT ALTER ON dbo.Departments TO LeadDeveloper;
 
 
 -- ####### MERGED CONTENT START #######
+
+--------------------------------------------------
+-- Source: BI_SCHEMA/View1.sql
+--------------------------------------------------
+create or replace view1(
+  select * from table1 where id is null
+);
+
 

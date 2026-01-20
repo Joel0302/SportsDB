@@ -20,7 +20,7 @@ jobs:
           # 1. Configuration
           RELEASE_DIR="RELEASE_SCRIPTS/Sprint160"
           BASE_ADHOC="$RELEASE_DIR/Adhoc_Script.sql"
-          MASTER_NAME="Master_Release_Final.sql"
+          MASTER_NAME="DDL_CONSOLIDATED.sql"
           MASTER_PATH="$RELEASE_DIR/$MASTER_NAME"
 
           mkdir -p "$RELEASE_DIR"

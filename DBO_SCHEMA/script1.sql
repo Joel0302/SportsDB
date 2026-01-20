@@ -10,5 +10,6 @@ CREATE TABLE IF NOT EXISTS employees (
 
 INSERT INTO employees (first_name, last_name, department, salary)
 
-VALUES ('John', 'Doe', 'Engineering', 95000.00);
+VALUES ('John', 'MArio', 'Engineering', 95000.00);
+
 

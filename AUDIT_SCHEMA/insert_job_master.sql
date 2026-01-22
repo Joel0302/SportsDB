@@ -1,2 +1,2 @@
 Insert into audit.jobmaster
-select 1,source,jobname;
+select 1,source,jobname,jobid;

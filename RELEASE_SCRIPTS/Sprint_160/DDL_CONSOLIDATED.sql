@@ -30,10 +30,3 @@ GRANT ALTER ON dbo.Departments TO LeadDeveloper;
 
 -- ####### MERGED CONTENT START #######
 
---------------------------------------------------
--- Source: BI_SCHEMA/View1.sql
---------------------------------------------------
-create or replace view1(
-  select * from table1 where id is null );
-
-

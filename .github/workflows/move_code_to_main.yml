@@ -18,10 +18,11 @@ jobs:
       - name: Generate Master Script
         run: |
           # 1. Configuration
-          RELEASE_DIR="RELEASE_SCRIPTS/Sprint160"
-          BASE_ADHOC="$RELEASE_DIR/Adhoc_script.sql"
+          RELEASE_DIR="RELEASE_SCRIPTS"
+          SPRINT_FOLDER="Sprint_160"
+          BASE_ADHOC="$RELEASE_DIR/$SPRINT_FOLDER/Adhoc_script.sql"
           MASTER_NAME="DDL_CONSOLIDATED.sql"
-          MASTER_PATH="$RELEASE_DIR/$MASTER_NAME"
+          MASTER_PATH="$RELEASE_DIR/$SPRINT_FOLDER/$MASTER_NAME"
 
           mkdir -p "$RELEASE_DIR"
           
@@ -42,14 +43,14 @@ jobs:
           # 3. Identify files changed in the merge
           # Logic: Include all .sql files, but EXCLUDE the target file itself and specific schemas
           # Note: We use double quotes for the MASTER_PATH exclusion to allow variable expansion
-          CHANGED_FILES=$(git diff --name-only HEAD^ HEAD -- '*.sql' ":!$MASTER_PATH" ':!DBO_SCHEMA/*' ':!STG_HIST_SCHEMA/*' || true)
+          CHANGED_FILES=$(git diff --name-only HEAD^ HEAD -- '*.sql' ":!$RELEASE_DIR" ':!DBO_SCHEMA/*' ':!STG_HIST_SCHEMA/*' ':!AUDIT_SCHEMA/*' || true)
 
           if [ -z "$CHANGED_FILES" ]; then
             echo "No additional SQL changes detected in this merge."
           else
             for file in $CHANGED_FILES; do
               # Final safety check: skip if file is somehow the master path or the adhoc itself (already added)
-              if [ -f "$file" ] && [ "$file" != "$MASTER_PATH" ] && [ "$file" != "$BASE_ADHOC" ]; then
+              if [ -f "$file" ] && [ "$file" != "$RELEASE_DIR" ]; then
                 echo "Adding content from: $file"
                 {
                   echo "--------------------------------------------------"

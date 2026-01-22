@@ -24,9 +24,36 @@ CREATE TABLE STG_HIST_SCHEMA.Stg_Hist_Employees (
   );
 
 
-GRANT EXECUTE ON dbo.CalculateBonuses TO HRUser;
+GRANT EXECUTE ON dbo.CalculateBonuses TO MainUser;
 GRANT ALTER ON dbo.Departments TO LeadDeveloper;
 
 
 -- ####### MERGED CONTENT START #######
+
+--------------------------------------------------
+-- Source: BI_SCHEMA/sample_view1.sql
+--------------------------------------------------
+create or replace sampleView1
+select * from customers;
+
+
+--------------------------------------------------
+-- Source: BI_SCHEMA/script2.sql
+--------------------------------------------------
+CREATE OR REPLACE VIEW department_salary_summary AS
+SELECT department, COUNT(employee_id) AS total_employees,
+    SUM(salary) AS total_budget,
+    ROUND(AVG(salary), 2) AS average_salary
+FROM 
+    employees
+GROUP BY 
+    department;
+
+
+
+--------------------------------------------------
+-- Source: STG_SCHEMA/Stg_table1.sql
+--------------------------------------------------
+create or replace stg_schema.stg_table1();
+
 

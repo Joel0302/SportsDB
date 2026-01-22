@@ -23,5 +23,5 @@ CREATE TABLE STG_HIST_SCHEMA.Stg_Hist_Employees (
   );
 
 
-GRANT EXECUTE ON dbo.CalculateBonuses TO HRUser;
+GRANT EXECUTE ON dbo.CalculateBonuses TO MainUser;
 GRANT ALTER ON dbo.Departments TO LeadDeveloper;

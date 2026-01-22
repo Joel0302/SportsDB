@@ -1,1 +1,3 @@
-create or replace stg_schema.stg_table1();
+create or replace stg_schema.stg_table1(
+  id varchar(255)
+  );

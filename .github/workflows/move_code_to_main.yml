@@ -17,66 +17,45 @@ jobs:
 
       - name: Generate Master Script
         run: |
-          # 1. Configuration
+          # 1. Setup paths
           RELEASE_DIR="RELEASE_SCRIPTS"
           SPRINT_FOLDER="Sprint_160"
+          MASTER_PATH="$RELEASE_DIR/$SPRINT_FOLDER/DDL_CONSOLIDATED.sql"
           BASE_ADHOC="$RELEASE_DIR/$SPRINT_FOLDER/Adhoc_script.sql"
-          MASTER_NAME="DDL_CONSOLIDATED.sql"
-          MASTER_PATH="$RELEASE_DIR/$SPRINT_FOLDER/$MASTER_NAME"
+          GRANTS_FILE="$RELEASE_DIR/GRANTS.sql"
 
-          mkdir -p "$RELEASE_DIR"
           
-          # Clean up old consolidated file if it exists to prevent "input is output" errors
           rm -f "$MASTER_PATH"
 
-          # 2. Start Master File with Adhoc_Script content
+          # 2. Add Adhoc Script first (if exists)
           if [ -f "$BASE_ADHOC" ]; then
             echo "-- BASELINE FROM ADHOC_SCRIPT.SQL --" > "$MASTER_PATH"
             cat "$BASE_ADHOC" >> "$MASTER_PATH"
-            echo -e "\n\n-- ####### MERGED CONTENT START #######\n" >> "$MASTER_PATH"
-            echo "Successfully initialized with $BASE_ADHOC"
+            echo -e "\n-- MERGED CONTENT START --\n" >> "$MASTER_PATH"
           else
-            echo "-- START OF MASTER SCRIPT (No Adhoc Found) --" > "$MASTER_PATH"
-            echo "Warning: Adhoc_script.sql not found at $BASE_ADHOC"
+            echo "-- START OF MASTER SCRIPT --" > "$MASTER_PATH"
           fi
 
-          # 3. Identify files changed in the merge
-          # Logic: Include all .sql files, but EXCLUDE the target file itself and specific schemas
-          # Note: We use double quotes for the MASTER_PATH exclusion to allow variable expansion
-          #CHANGED_FILES=$(git diff --name-only HEAD^ HEAD -- '*.sql' ":!$RELEASE_DIR" ':!DBO_SCHEMA/*' ':!STG_HIST_SCHEMA/*' ':!AUDIT_SCHEMA/*' || true)
-          CHANGED_FILES=$(git diff --name-only --diff-filter=ACMR HEAD^ HEAD -- '*.sql' ":!$RELEASE_DIR/*" ':!DBO_SCHEMA/*' ':!STG_HIST_SCHEMA/*' ':!AUDIT_SCHEMA/*' || true)
-          if [ -z "$CHANGED_FILES" ]; then
-            echo "No additional SQL changes detected in this merge."
-          else
-            for file in $CHANGED_FILES; do
-              # Final safety check: skip if file is somehow the master path or the adhoc itself (already added)
-              if [ -f "$file" ] && [ "$file" != "$RELEASE_DIR" ]; then
-                echo "Adding content from: $file"
-                {
-                  echo "--------------------------------------------------"
-                  echo "-- Source: $file"
-                  echo "--------------------------------------------------"
-                  cat "$file"
-                  echo -e "\n" 
-                } >> "$MASTER_PATH"
-              fi
-            done
-          fi
+          # 3. Add changed SQL files (exclude the release directory itself)
+          CHANGED_FILES=$(git diff --name-only --diff-filter=ACMR HEAD^ HEAD -- '*.sql' ":!RELEASE_SCRIPTS/*" ':!DBO_SCHEMA/*' ':!STG_HIST_SCHEMA/*' ':!AUDIT_SCHEMA/*' || true)
 
-          # 4. Append Grants Script at the very end
-          GRANTS_FILE="$RELEASE_DIR/$SPRINT_FOLDER/GRANTS.sql"
+          for file in $CHANGED_FILES; do
+            if [ -f "$file" ]; then
+              echo -e "-- Source: $file --" >> "$MASTER_PATH"
+              cat "$file" >> "$MASTER_PATH"
+              echo -e "\n" >> "$MASTER_PATH"
+            fi
+          done
+
+          # 4. Add Grants Script last (if exists)
           if [ -f "$GRANTS_FILE" ]; then
-            echo "Appending Grants at the end."
-            echo -e "-- ####### GRANTS START ####### --" >> "$MASTER_PATH"
+            echo -e "-- GRANTS START --" >> "$MASTER_PATH"
             cat "$GRANTS_FILE" >> "$MASTER_PATH"
-            echo -e "\n" >> "$MASTER_PATH"
           fi
 
-          # 5. Push the final script back to the main branch
+          # 5. Push changes
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          
           git add "$MASTER_PATH"
-          # Use --allow-empty and [skip ci] to prevent infinite loops
-          git commit -m "chore: update DDL_CONSOLIDATED.sql after merge [skip ci]" || echo "No changes to commit"
+          git commit -m "Update DDL_CONSOLIDATED.sql [skip ci]" || exit 0
           git push origin main

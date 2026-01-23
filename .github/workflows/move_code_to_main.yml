@@ -64,7 +64,7 @@ jobs:
           fi
 
           # 4. Append Grants Script at the very end
-          GRANTS_FILE="$RELEASE_DIR/$SPRINT_FOLDER/grants.sql"
+          GRANTS_FILE="$RELEASE_DIR/$SPRINT_FOLDER/GRANTS.sql"
           if [ -f "$GRANTS_FILE" ]; then
             echo "Appending Grants at the end."
             echo -e "-- ####### GRANTS START ####### --" >> "$MASTER_PATH"

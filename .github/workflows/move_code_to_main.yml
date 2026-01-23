@@ -37,10 +37,9 @@ jobs:
 
           # 3. Add changed SQL files (exclude the release directory itself)
           CHANGED_FILES=$(git diff --name-only --diff-filter=ACMR HEAD^ HEAD -- '*.sql' ":!RELEASE_SCRIPTS/*" ':!DBO_SCHEMA/*' ':!STG_HIST_SCHEMA/*' ':!AUDIT_SCHEMA/*' || true)
-
+          echo -e "\n-- MERGED CONTENT START --\n" >> "$MASTER_PATH"
           for file in $CHANGED_FILES; do
             if [ -f "$file" ]; then
-              echo -e "\n-- MERGED CONTENT START --\n" >> "$MASTER_PATH"
               echo -e "-- Source: $file --" >> "$MASTER_PATH"
               cat "$file" >> "$MASTER_PATH"
               echo -e "\n" >> "$MASTER_PATH"

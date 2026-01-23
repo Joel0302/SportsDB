@@ -26,3 +26,25 @@ CREATE TABLE STG_HIST_SCHEMA.Stg_Hist_Employees (
 
 -- MERGED CONTENT START --
 
+-- Source: BI_SCHEMA/script2.sql --
+CREATE OR REPLACE VIEW department_salarysummary AS
+SELECT department, COUNT(employee_id) AS total_employees,
+    SUM(salary) AS total_budget,
+    ROUND(AVG(salary), 3) AS average_salary
+FROM 
+    employees
+GROUP BY 
+    department;
+
+
+
+
+
+-- Source: STG_SCHEMA/Stg_table1.sql --
+create or replace stg_schema.stg_table1(
+  id varchar(1000) ,
+  name varchar(255),
+  age varchar(255)
+  );
+
+

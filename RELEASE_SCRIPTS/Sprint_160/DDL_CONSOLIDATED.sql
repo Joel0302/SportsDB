@@ -24,16 +24,26 @@ CREATE TABLE STG_HIST_SCHEMA.Stg_Hist_Employees (
   );
 
 
-GRANT EXECUTE ON dbo.CalculateBonuses TO HRUser;
-GRANT ALTER ON dbo.Departments TO LeadDeveloper;
-
-
 -- ####### MERGED CONTENT START #######
 
 --------------------------------------------------
--- Source: BI_SCHEMA/sample_view1.sql
+-- Source: BI_SCHEMA/View1.sql
 --------------------------------------------------
-create or replace sampleView1   
-select * from customers where date is not null;
+create or replace view1(
+  select * from table1 where name is null);
+
+
+--------------------------------------------------
+-- Source: STG_SCHEMA/Stg_table1.sql
+--------------------------------------------------
+create or replace stg_schema.stg_table1(
+  id varchar(255),
+  name varchar(255)
+  );
+
+
+-- ####### GRANTS START ####### --
+GRANT EXECUTE ON dbo.CalculateBonuses TO HRUser;
+GRANT ALTER ON dbo.Departments TO LeadDeveloper;
 
 

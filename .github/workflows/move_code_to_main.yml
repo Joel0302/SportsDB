@@ -31,7 +31,6 @@ jobs:
           if [ -f "$BASE_ADHOC" ]; then
             echo "-- BASELINE FROM ADHOC_SCRIPT.SQL --" > "$MASTER_PATH"
             cat "$BASE_ADHOC" >> "$MASTER_PATH"
-            echo -e "\n-- MERGED CONTENT START --\n" >> "$MASTER_PATH"
           else
             echo "-- START OF MASTER SCRIPT --" > "$MASTER_PATH"
           fi
@@ -41,6 +40,7 @@ jobs:
 
           for file in $CHANGED_FILES; do
             if [ -f "$file" ]; then
+              echo -e "\n-- MERGED CONTENT START --\n" >> "$MASTER_PATH"
               echo -e "-- Source: $file --" >> "$MASTER_PATH"
               cat "$file" >> "$MASTER_PATH"
               echo -e "\n" >> "$MASTER_PATH"

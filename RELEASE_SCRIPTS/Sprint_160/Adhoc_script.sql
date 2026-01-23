@@ -21,7 +21,3 @@ CREATE TABLE STG_HIST_SCHEMA.Stg_Hist_Employees (
     Salary VARCHAR(50),                    
     LastModifiedDate VARCHAR(50)
   );
-
-
-GRANT EXECUTE ON dbo.CalculateBonuses TO HRUser;
-GRANT ALTER ON dbo.Departments TO LeadDeveloper;

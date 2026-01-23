@@ -63,7 +63,16 @@ jobs:
             done
           fi
 
-          # 4. Push the final script back to the main branch
+          # 4. Append Grants Script at the very end
+          GRANTS_FILE="$RELEASE_DIR/$SPRINT_FOLDER/GRANTS.sql"
+          if [ -f "$GRANTS_FILE" ]; then
+            echo "Appending Grants at the end."
+            echo -e "-- ####### GRANTS START ####### --" >> "$MASTER_PATH"
+            cat "$GRANTS_FILE" >> "$MASTER_PATH"
+            echo -e "\n" >> "$MASTER_PATH"
+          fi
+
+          # 5. Push the final script back to the main branch
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           

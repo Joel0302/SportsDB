@@ -1,2 +1,2 @@
 create or replace view1(
-  select * from table1 where id is null);
+  select * from table1 where name is null);

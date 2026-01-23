@@ -25,3 +25,18 @@ CREATE TABLE STG_HIST_SCHEMA.Stg_Hist_Employees (
 
 -- MERGED CONTENT START --
 
+-- Source: BI_SCHEMA/View1.sql --
+create or replace view1 (
+  select * from table1 where name is null);
+
+
+
+-- MERGED CONTENT START --
+
+-- Source: STG_SCHEMA/Stg_table1.sql --
+create or replace stg_schema.stg_table1(
+  id varchar(1000) ,
+  name varchar(255)
+  );
+
+

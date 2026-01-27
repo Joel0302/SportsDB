@@ -23,3 +23,7 @@ CREATE TABLE STG_HIST_SCHEMA.Stg_Hist_Employees (
     Salary VARCHAR(50),                    
     LastModifiedDate VARCHAR(50)
   );
+-- GRANTS START --
+GRANT USAGE ON SCHEMA DBO_SCHEMA TO developer_role;
+
+GRANT CREATE ON SCHEMA DBO_SCHEMA TO senior_developer;

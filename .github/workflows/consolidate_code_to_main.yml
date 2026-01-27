@@ -22,7 +22,7 @@ jobs:
           SPRINT_FOLDER="Sprint_160"
           MASTER_PATH="$RELEASE_DIR/$SPRINT_FOLDER/DDL_CONSOLIDATED.sql"
           BASE_ADHOC="$RELEASE_DIR/$SPRINT_FOLDER/Adhoc_script.sql"
-          GRANTS_FILE="$RELEASE_DIR/GRANTS.sql"
+          GRANTS_FILE="$RELEASE_DIR/$SPRINT_FOLDER/GRANTS.sql"
 
           
           rm -f "$MASTER_PATH"
@@ -61,3 +61,4 @@ jobs:
           git add "$MASTER_PATH"
           git commit -m "Update DDL_CONSOLIDATED.sql [skip ci]" || exit 0
           git push origin main
+

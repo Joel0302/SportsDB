@@ -1,33 +1,32 @@
-name: Master-Script-On-Merge
+name: Master-Script-Workflow
 on:
   push:
     branches:
-      - 'main'
+      - 'Sprint*'
+  pull_request:
+    branches:
+      - 'Sprint*'
 
 jobs:
   Create-Final-Master:
-    # This condition ensures it only runs if the push was a PR merge
-    if: github.event.head_commit.message != '' 
+    # Removed the head_commit condition to allow PRs to run validation
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # Essential to see previous commits for the diff
+          fetch-depth: 0
 
       - name: Generate Master Script
         run: |
-          # 1. Setup paths
           RELEASE_DIR="RELEASE_SCRIPTS"
           SPRINT_FOLDER="Sprint_160"
           MASTER_PATH="$RELEASE_DIR/$SPRINT_FOLDER/DDL_CONSOLIDATED.sql"
           BASE_ADHOC="$RELEASE_DIR/$SPRINT_FOLDER/Adhoc_script.sql"
           GRANTS_FILE="$RELEASE_DIR/$SPRINT_FOLDER/GRANTS.sql"
 
-          
           rm -f "$MASTER_PATH"
 
-          # 2. Add Adhoc Script first (if exists)
           if [ -f "$BASE_ADHOC" ]; then
             echo "-- BASELINE FROM ADHOC_SCRIPT.SQL --" > "$MASTER_PATH"
             cat "$BASE_ADHOC" >> "$MASTER_PATH"
@@ -35,8 +34,12 @@ jobs:
             echo "-- START OF MASTER SCRIPT --" > "$MASTER_PATH"
           fi
 
-          # 3. Add changed SQL files (exclude the release directory itself)
-          CHANGED_FILES=$(git diff --name-only --diff-filter=ACMR HEAD^ HEAD -- '*.sql' ":!RELEASE_SCRIPTS/*" ':!DBO_SCHEMA/*' ':!STG_HIST_SCHEMA/*' ':!AUDIT_SCHEMA/*' || true)
+          # Logic to handle diff differently for PR vs Push
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            CHANGED_FILES=$(git diff --name-only origin/main...HEAD -- '*.sql' ":!$RELEASE_DIR/*" ':!DBO_SCHEMA/*' ':!STG_HIST_SCHEMA/*' ':!AUDIT_SCHEMA/*' || true)
+          else
+            CHANGED_FILES=$(git diff --name-only HEAD^ HEAD -- '*.sql' ":!$RELEASE_DIR/*" ':!DBO_SCHEMA/*' ':!STG_HIST_SCHEMA/*' ':!AUDIT_SCHEMA/*' || true)
+          fi
 
           if [ -n "$CHANGED_FILES" ]; then
             echo -e "\n-- MERGED CONTENT START --\n" >> "$MASTER_PATH"
@@ -49,16 +52,17 @@ jobs:
             done
           fi
 
-          # 4. Add Grants Script last (if exists)
           if [ -f "$GRANTS_FILE" ]; then
             echo -e "-- GRANTS START --" >> "$MASTER_PATH"
             cat "$GRANTS_FILE" >> "$MASTER_PATH"
           fi
 
-          # 5. Push changes
+      - name: Push changes
+        # Only push to main when the code is actually merged (the push event)
+        if: github.event_name == 'push'
+        run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git add "$MASTER_PATH"
+          git add .
           git commit -m "Update DDL_CONSOLIDATED.sql [skip ci]" || exit 0
           git push origin main
-

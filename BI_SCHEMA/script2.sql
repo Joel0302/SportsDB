@@ -1,4 +1,4 @@
-CREATE OR REPLACE VIEW department_salary_summary AS
+CREATE OR REPLACE VIEW departmentsalarysummary AS
 SELECT 
     department,
     COUNT(employee_id) AS totalemployees,
@@ -8,4 +8,5 @@ FROM
     employees
 GROUP BY 
     department;
+
 

@@ -1,1 +1,2 @@
-Create or replace certifiedview.VWsample(); 
+Create or replace certifiedview.VWsample()
+  select id,name from table1; 

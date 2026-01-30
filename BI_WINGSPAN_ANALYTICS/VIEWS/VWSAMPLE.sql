@@ -2,7 +2,7 @@
 CREATE VIEW BI_SCHEMA.v_Active_Users AS
 SELECT 
     UserID, 
-    UserName, 
+    UserName , 
     Email, 
     LastLoginDate
 FROM 

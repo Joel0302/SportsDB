@@ -28,8 +28,7 @@ CREATE TABLE STG_HIST_SCHEMA.Stg_Hist_Employees (
 -- MERGED CONTENT START --
 
 -- Source: BI_WINGSPAN_ANALYTICS/VIEWS/VWSAMPLE.sql --
-
-CREATE VIEW BI_SCHEMA.v_Active_Users AS
+CREATE VIEW BI_SCHEMA.ActiveUsers AS
 SELECT 
     UserID, 
     USerAddress,
@@ -42,11 +41,15 @@ WHERE
     IsActive = 1;
 
 
+-- Source: CERTIFIED_BUSINESS_WINGSPAN_ANALYTICS/VIEWS/VWADOBE.sql --
+Create or replace certifiedview.VWsample(); 
+
+
 -- Source: STG_WINGSPAN_ANALYTICS/TABLES/SPORTS.sql --
 create or replace stg_schema.stg_table1(
   id varchar(1000),
   masterid varchar(255),
-  name varchar(255) ,
+  name varchar(1000) ,
   age varchar(1000),
   Gender varchar(255)
   );

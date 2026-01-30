@@ -1,1 +1,2 @@
-create or replace view dbo.Vwsampleview();
+create or replace view dbo.Vwsampleview()
+  uid varchar (255);

@@ -19,7 +19,7 @@ jobs:
       - name: Generate Master Script
         run: |
           RELEASE_DIR="RELEASE_SCRIPTS"
-          SPRINT_FOLDER="Sprint_160"
+          SPRINT_FOLDER="${{ vars.SPRINT_NAME }}"
           MASTER_PATH="$RELEASE_DIR/$SPRINT_FOLDER/DDL_CONSOLIDATED.sql"
           BASE_ADHOC="$RELEASE_DIR/$SPRINT_FOLDER/Adhoc_script.sql"
           GRANTS_FILE="$RELEASE_DIR/$SPRINT_FOLDER/GRANTS.sql"
@@ -34,9 +34,17 @@ jobs:
           fi
 
            if [ "${{ github.event_name }}" == "pull_request" ]; then
-            CHANGED_FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD -- '*.sql' ":!$RELEASE_DIR/*" ':!DBO_SCHEMA/*' ':!STG_HIST_SCHEMA/*' ':!AUDIT_SCHEMA/*' || true)
+            CHANGED_FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD -- \
+            'DBO_SCHEMA/Views/*.sql' \
+            'BI_WINGSPAN_ANALYTICS/*.sql' \
+            'STG_WINGSPAN_ANALYTICS/*.sql' \
+            'CERTIFIED_BUSINESS_WINGSPAN_ANALYTICS/*.sql' || true)
           else
-            CHANGED_FILES=$(git diff --name-only HEAD^ HEAD -- '*.sql' ":!$RELEASE_DIR/*" ':!DBO_SCHEMA/*' ':!STG_HIST_SCHEMA/*' ':!AUDIT_SCHEMA/*' || true)
+            CHANGED_FILES=$(git diff --name-only HEAD^ HEAD -- \
+            'DBO_SCHEMA/Views/*.sql' \
+            'BI_WINGSPAN_ANALYTICS/*.sql' \
+            'STG_WINGSPAN_ANALYTICS/*.sql' \
+            'CERTIFIED_BUSINESS_WINGSPAN_ANALYTICS/*.sql' || true)
           fi
 
           if [ -n "$CHANGED_FILES" ]; then
@@ -64,5 +72,6 @@ jobs:
           git commit -m "Update DDL_CONSOLIDATED.sql [skip ci]" || exit 0
           # This pushes to the specific branch that triggered the action
           git push origin HEAD:${{ github.ref_name }}
+
 
 

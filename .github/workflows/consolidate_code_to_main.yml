@@ -24,6 +24,9 @@ jobs:
           BASE_ADHOC="$RELEASE_DIR/$SPRINT_FOLDER/Adhoc_Scripts.sql"
           GRANTS_FILE="$RELEASE_DIR/$SPRINT_FOLDER/Grants.sql"
 
+          TARGET_DIR="$RELEASE_DIR/$SPRINT_FOLDER"
+          mkdir -p "$TARGET_DIR"
+          
           rm -f "$MASTER_PATH"
 
           if [ -f "$BASE_ADHOC" ]; then
@@ -72,6 +75,7 @@ jobs:
           git commit -m "Update DDL_CONSOLIDATED.sql [skip ci]" || exit 0
           # This pushes to the specific branch that triggered the action
           git push origin HEAD:${{ github.ref_name }}
+
 
 
 

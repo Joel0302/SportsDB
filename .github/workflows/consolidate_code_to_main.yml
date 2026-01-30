@@ -21,8 +21,8 @@ jobs:
           RELEASE_DIR="RELEASE_SCRIPTS"
           SPRINT_FOLDER="${{ vars.SPRINT_NAME }}"
           MASTER_PATH="$RELEASE_DIR/$SPRINT_FOLDER/DDL_CONSOLIDATED.sql"
-          BASE_ADHOC="$RELEASE_DIR/$SPRINT_FOLDER/Adhoc_script.sql"
-          GRANTS_FILE="$RELEASE_DIR/$SPRINT_FOLDER/GRANTS.sql"
+          BASE_ADHOC="$RELEASE_DIR/$SPRINT_FOLDER/Adhoc_Scripts.sql"
+          GRANTS_FILE="$RELEASE_DIR/$SPRINT_FOLDER/Grants.sql"
 
           rm -f "$MASTER_PATH"
 

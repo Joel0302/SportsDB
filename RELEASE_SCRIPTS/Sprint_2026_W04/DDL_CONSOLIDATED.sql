@@ -27,37 +27,17 @@ CREATE TABLE STG_HIST_SCHEMA.Stg_Hist_Employees (
 
 -- MERGED CONTENT START --
 
--- Source: BI_WINGSPAN_ANALYTICS/TABLES/table.sql --
-Create or replace bi_schema.sampletable 
-id varchar(255) ,
-  name varchar(255);
-
-
--- Source: BI_WINGSPAN_ANALYTICS/VIEWS/VWSAMPLE.sql --
-CREATE VIEW BI_SCHEMA.ActiveUsers AS
-SELECT 
-    UserID, 
-    USerAddress,
-    UserName , 
-    Emailaddress, 
-    LastLoginDate
-FROM 
-    DBO_SCHEMA.Users
-WHERE 
-    IsActive = 1;
-
-
 -- Source: CERTIFIED_BUSINESS_WINGSPAN_ANALYTICS/VIEWS/VWADOBE.sql --
 Create or replace certifiedview.VWsample()
-  select id,name from table1; 
+  select id,name from table3; 
 
 
 -- Source: STG_WINGSPAN_ANALYTICS/TABLES/SPORTS.sql --
 create or replace stg_schema.stg_table1(
   id varchar(1000),
-  masterid varchar(1000),
+  masterid varchar(4000),
   name varchar(1000) ,
-  age varchar(1000),
+  age varchar(255),
   Gender varchar(255)
   );
 

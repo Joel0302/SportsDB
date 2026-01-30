@@ -1,7 +1,7 @@
 
 CREATE VIEW BI_SCHEMA.v_Active_Users AS
 SELECT 
-    UserID, 
+    UserIdentity , 
     USerAddress,
     UserName , 
     Email, 

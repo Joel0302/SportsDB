@@ -1,2 +1,3 @@
 create or replace view dbo.Vwsampleview
-select 'mario';
+select 'mario' 
+  ;

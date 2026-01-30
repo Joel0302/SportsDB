@@ -1,2 +1,1 @@
-Create or replace certifiedview.VWsample
-select 'mario' from source; 
+Create or replace certifiedview.VWsample(); 

@@ -1,2 +1,2 @@
 Create or replace certifiedview.VWsample
-select 'mario';
+select 'mario' from source; 

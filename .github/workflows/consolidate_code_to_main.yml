@@ -2,10 +2,10 @@ name: Master-Script-Workflow
 on:
   push:
     branches:
-      - 'QA'
+      - 'Sprint'
   pull_request:
     branches:
-      - 'QA'
+      - 'sprint'
 
 jobs:
   Create-Final-Master:
@@ -75,6 +75,7 @@ jobs:
           git commit -m "Update DDL_CONSOLIDATED.sql [skip ci]" || exit 0
           # This pushes to the specific branch that triggered the action
           git push origin HEAD:${{ github.ref_name }}
+
 
 
 

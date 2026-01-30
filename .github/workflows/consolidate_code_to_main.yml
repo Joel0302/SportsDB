@@ -35,13 +35,13 @@ jobs:
 
            if [ "${{ github.event_name }}" == "pull_request" ]; then
             CHANGED_FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD -- \
-            'DBO_SCHEMA/Views/*.sql' \
+            'DBO_WINGSPAN_ANALYTICS/Views/*.sql' \
             'BI_WINGSPAN_ANALYTICS/*.sql' \
             'STG_WINGSPAN_ANALYTICS/*.sql' \
             'CERTIFIED_BUSINESS_WINGSPAN_ANALYTICS/*.sql' || true)
           else
             CHANGED_FILES=$(git diff --name-only HEAD^ HEAD -- \
-            'DBO_SCHEMA/Views/*.sql' \
+            'DBO_WINGSPAN_ANALYTICS/Views/*.sql' \
             'BI_WINGSPAN_ANALYTICS/*.sql' \
             'STG_WINGSPAN_ANALYTICS/*.sql' \
             'CERTIFIED_BUSINESS_WINGSPAN_ANALYTICS/*.sql' || true)
@@ -72,6 +72,7 @@ jobs:
           git commit -m "Update DDL_CONSOLIDATED.sql [skip ci]" || exit 0
           # This pushes to the specific branch that triggered the action
           git push origin HEAD:${{ github.ref_name }}
+
 
 
 

@@ -48,12 +48,12 @@ jobs:
 
             # A. ALWAYS TRY ADHOC FIRST (but only if it actually changed)
             if echo "$CHANGED_FILES" | grep -q "Adhoc_Scripts.sql"; then
-               echo -e "\n-- SECTION: ADHOC SCRIPTS (UPDATED) --" >> "$MASTER_PATH"
+               echo -e "\n-- SECTION: ADHOC SCRIPTS --" >> "$MASTER_PATH"
                cat "$TARGET_DIR/Adhoc_Scripts.sql" >> "$MASTER_PATH"
                echo -e "\n" >> "$MASTER_PATH"
             fi
 
-            # B. ADD DDL FOLDER CHANGES (Views, BI, STG, etc.)
+            # B. ADD FOLDER/FILE CHANGES (Views, BI, STG, etc.)
             echo -e "\n-- SECTION: FOLDER/FILE CHANGES --" >> "$MASTER_PATH"
             for file in $CHANGED_FILES; do
               # Skip Adhoc and Grants in this loop so they don't repeat
@@ -86,4 +86,5 @@ jobs:
           # The commit message now includes the specific P# file created
           git commit -m "Auto-generated consolidated DDL phase script [skip ci]" || exit 0
           git push origin HEAD:${{ github.ref_name }}
+
 

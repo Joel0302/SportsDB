@@ -4,7 +4,7 @@ SELECT
     USerAddress,
     UserName , 
     Email, 
-    LastLoginDate
+    LoginDate
 FROM 
     DBO_SCHEMA.Users
 WHERE 

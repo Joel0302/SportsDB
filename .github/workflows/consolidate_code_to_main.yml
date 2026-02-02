@@ -46,8 +46,6 @@ jobs:
             NEXT_VAL=$((EXISTING_COUNT + 1))
             MASTER_PATH="$TARGET_DIR/DDL_CONSOLIDATED_P${NEXT_VAL}.sql"
 
-            echo "-- VERSION: PHASE $NEXT_VAL --" > "$MASTER_PATH"        
-
             # A. ALWAYS TRY ADHOC FIRST (but only if it actually changed)
             if echo "$CHANGED_FILES" | grep -q "Adhoc_Scripts.sql"; then
                echo -e "\n-- SECTION: ADHOC SCRIPTS (UPDATED) --" >> "$MASTER_PATH"
@@ -56,7 +54,7 @@ jobs:
             fi
 
             # B. ADD DDL FOLDER CHANGES (Views, BI, STG, etc.)
-            echo -e "\n-- SECTION: DDL CHANGES --" >> "$MASTER_PATH"
+            echo -e "\n-- SECTION: FOLDER/FILE CHANGES --" >> "$MASTER_PATH"
             for file in $CHANGED_FILES; do
               # Skip Adhoc and Grants in this loop so they don't repeat
               if [[ "$file" == *"Adhoc_Scripts.sql" ]] || [[ "$file" == *"Grants.sql" ]]; then
@@ -88,3 +86,4 @@ jobs:
           # The commit message now includes the specific P# file created
           git commit -m "Auto-generated consolidated DDL phase script [skip ci]" || exit 0
           git push origin HEAD:${{ github.ref_name }}
+

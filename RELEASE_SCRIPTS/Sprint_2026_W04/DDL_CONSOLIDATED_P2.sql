@@ -1,3 +1,5 @@
+
+-- SECTION: ADHOC SCRIPTS (UPDATED) --
 ALTER TABLE dbo.Employees 
 ALTER COLUMN LastName VARCHAR(2000);
 
@@ -22,4 +24,33 @@ CREATE TABLE STG_HIST_SCHEMA.Stg_Hist_Employees (
     Salary VARCHAR(50),                    
     LastModifiedDate VARCHAR(50)
   );
+
+
+
+
+-- SECTION: FOLDER/FILE CHANGES --
+-- Source: BI_WINGSPAN_ANALYTICS/VIEWS/VWSAMPLE.sql --
+CREATE VIEW BI_SCHEMA.ActiveUsers AS
+SELECT 
+    UserIdentity , 
+    USerAddress,
+    UserName , 
+    Email, 
+    LoginDate
+FROM 
+    DBO_SCHEMA.Users
+WHERE 
+    IsActive = 1;
+
+
+-- Source: STG_WINGSPAN_ANALYTICS/TABLES/SPORTS.sql --
+create or replace stg_schema.stg_table1(
+  id varchar(1000),
+  masterNAME varchar(255),
+  name varchar(255) ,
+  age varchar(1000),
+  Gender varchar(255),
+  maidid varchar(255)
+  );
+
 

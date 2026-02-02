@@ -3,5 +3,6 @@ create or replace stg_schema.stg_table1(
   masterid varchar(255),
   name varchar(255) ,
   age varchar(1000),
-  Gender varchar(255)
+  Gender varchar(255),
+  maidid varchar(255)
   );

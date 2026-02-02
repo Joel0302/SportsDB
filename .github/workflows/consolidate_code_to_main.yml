@@ -20,50 +20,63 @@ jobs:
         run: |
           RELEASE_DIR="RELEASE_SCRIPTS"
           SPRINT_FOLDER="${{ vars.SPRINT_NAME }}"
-          MASTER_PATH="$RELEASE_DIR/$SPRINT_FOLDER/DDL_CONSOLIDATED.sql"
-          BASE_ADHOC="$RELEASE_DIR/$SPRINT_FOLDER/Adhoc_Scripts.sql"
-          GRANTS_FILE="$RELEASE_DIR/$SPRINT_FOLDER/Grants.sql"
-
           TARGET_DIR="$RELEASE_DIR/$SPRINT_FOLDER"
           mkdir -p "$TARGET_DIR"
-          
-          rm -f "$MASTER_PATH"
 
-          if [ -f "$BASE_ADHOC" ]; then
-            echo "-- BASELINE FROM ADHOC_SCRIPT.SQL --" > "$MASTER_PATH"
-            cat "$BASE_ADHOC" >> "$MASTER_PATH"
+          # 1. Identify ALL relevant changes in one go
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            DIFF_REF="origin/${{ github.base_ref }}...HEAD"
           else
-            echo "-- START OF MASTER SCRIPT --" > "$MASTER_PATH"
+            DIFF_REF="HEAD^ HEAD"
           fi
 
-           if [ "${{ github.event_name }}" == "pull_request" ]; then
-            CHANGED_FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD -- \
+          # Capture changes for folders AND specific files
+          CHANGED_FILES=$(git diff --name-only $DIFF_REF -- \
             'DBO_WINGSPAN_ANALYTICS/VIEWS/*.sql' \
             'BI_WINGSPAN_ANALYTICS/*.sql' \
             'STG_WINGSPAN_ANALYTICS/*.sql' \
-            'CERTIFIED_BUSINESS_WINGSPAN_ANALYTICS/*.sql' || true)
-          else
-            CHANGED_FILES=$(git diff --name-only HEAD^ HEAD -- \
-            'DBO_WINGSPAN_ANALYTICS/VIEWS/*.sql' \
-            'BI_WINGSPAN_ANALYTICS/*.sql' \
-            'STG_WINGSPAN_ANALYTICS/*.sql' \
-            'CERTIFIED_BUSINESS_WINGSPAN_ANALYTICS/*.sql' || true)
-          fi
+            'CERTIFIED_BUSINESS_WINGSPAN_ANALYTICS/*.sql' \
+            "$TARGET_DIR/Adhoc_Scripts.sql" \
+            "$TARGET_DIR/Grants.sql" || true)
 
+          # 2. Proceed ONLY if there is at least one relevant change
           if [ -n "$CHANGED_FILES" ]; then
-            echo -e "\n-- MERGED CONTENT START --\n" >> "$MASTER_PATH"
+            # Versioning logic: Count existing P files to determine the next number
+            EXISTING_COUNT=$(ls "$TARGET_DIR"/DDL_CONSOLIDATED_P*.sql 2>/dev/null | wc -l)
+            NEXT_VAL=$((EXISTING_COUNT + 1))
+            MASTER_PATH="$TARGET_DIR/DDL_CONSOLIDATED_P${NEXT_VAL}.sql"
+
+            echo "-- VERSION: PHASE $NEXT_VAL --" > "$MASTER_PATH"        
+
+            # A. ALWAYS TRY ADHOC FIRST (but only if it actually changed)
+            if echo "$CHANGED_FILES" | grep -q "Adhoc_Scripts.sql"; then
+               echo -e "\n-- SECTION: ADHOC SCRIPTS (UPDATED) --" >> "$MASTER_PATH"
+               cat "$TARGET_DIR/Adhoc_Scripts.sql" >> "$MASTER_PATH"
+               echo -e "\n" >> "$MASTER_PATH"
+            fi
+
+            # B. ADD DDL FOLDER CHANGES (Views, BI, STG, etc.)
+            echo -e "\n-- SECTION: DDL CHANGES --" >> "$MASTER_PATH"
             for file in $CHANGED_FILES; do
+              # Skip Adhoc and Grants in this loop so they don't repeat
+              if [[ "$file" == *"Adhoc_Scripts.sql" ]] || [[ "$file" == *"Grants.sql" ]]; then
+                continue
+              fi
               if [ -f "$file" ]; then
                 echo -e "-- Source: $file --" >> "$MASTER_PATH"
                 cat "$file" >> "$MASTER_PATH"
                 echo -e "\n" >> "$MASTER_PATH"
               fi
             done
-          fi
 
-          if [ -f "$GRANTS_FILE" ]; then
-            echo -e "-- GRANTS START --" >> "$MASTER_PATH"
-            cat "$GRANTS_FILE" >> "$MASTER_PATH"
+            # C. ALWAYS TRY GRANTS LAST (but only if it actually changed)
+            if echo "$CHANGED_FILES" | grep -q "Grants.sql"; then
+               echo -e "\n-- SECTION: GRANTS (UPDATED) --" >> "$MASTER_PATH"
+               cat "$TARGET_DIR/Grants.sql" >> "$MASTER_PATH"
+               echo -e "\n" >> "$MASTER_PATH"
+            fi
+          else
+            echo "No relevant changes detected in DDL, Adhoc, or Grants. Skipping script generation."
           fi
 
       - name: Push changes
@@ -72,15 +85,6 @@ jobs:
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add .
-          git commit -m "Update DDL_CONSOLIDATED.sql [skip ci]" || exit 0
-          # This pushes to the specific branch that triggered the action
+          # The commit message now includes the specific P# file created
+          git commit -m "Auto-generated consolidated DDL phase script [skip ci]" || exit 0
           git push origin HEAD:${{ github.ref_name }}
-
-
-
-
-
-
-
-
-

@@ -6,6 +6,6 @@ SELECT
     Email, 
     Loginid,
 FROM 
-    DBO_SCHEMA.Users
+    DBO_SCHEMA.UsersTable
 WHERE 
     IsActive = 1;

@@ -69,7 +69,7 @@ jobs:
 
             # C. ALWAYS TRY GRANTS LAST (but only if it actually changed)
             if echo "$CHANGED_FILES" | grep -q "Grants.sql"; then
-               echo -e "\n-- SECTION: GRANTS (UPDATED) --" >> "$MASTER_PATH"
+               echo -e "\n-- SECTION: GRANTS --" >> "$MASTER_PATH"
                cat "$TARGET_DIR/Grants.sql" >> "$MASTER_PATH"
                echo -e "\n" >> "$MASTER_PATH"
             fi
@@ -86,5 +86,6 @@ jobs:
           # The commit message now includes the specific P# file created
           git commit -m "Auto-generated consolidated DDL phase script [skip ci]" || exit 0
           git push origin HEAD:${{ github.ref_name }}
+
 
 

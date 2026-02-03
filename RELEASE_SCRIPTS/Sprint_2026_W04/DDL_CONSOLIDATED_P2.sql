@@ -1,3 +1,6 @@
+
+-- SECTION: FOLDER/FILE CHANGES --
+-- Source: BI_WINGSPAN_ANALYTICS/VIEWS/VWSAMPLE.sql --
 CREATE VIEW BI_SCHEMA.ActiveUsers AS
 SELECT 
     UserIdentities , 
@@ -9,3 +12,5 @@ FROM
     DBO_SCHEMA.Users
 WHERE 
     IsActive = 1;
+
+

@@ -1,2 +1,2 @@
 insert into wingsoan_logs
-select 1,source, loaddate;
+select 2,source, loaddate;

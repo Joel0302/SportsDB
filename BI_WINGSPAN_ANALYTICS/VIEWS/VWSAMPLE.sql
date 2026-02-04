@@ -3,7 +3,7 @@ SELECT
     UserIdentities , 
     UserAddress,
     UserName , 
-    Email, 
+    Emailaddress, 
     LoginDate
 FROM 
     DBO_SCHEMA.Users

@@ -3,7 +3,7 @@ ALTER COLUMN LastName VARCHAR(200);
 
 
 ALTER TABLE dbo.Employees 
-ADD PhoneNumber VARCHAR(20);
+ADD PhoneNumber VARCHAR(200);
 
 CREATE TABLE dbo.Departments (
     DepartmentID INT PRIMARY KEY IDENTITY(1,1),

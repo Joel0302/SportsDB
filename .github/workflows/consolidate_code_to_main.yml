@@ -2,10 +2,10 @@ name: Master-Script-Workflow
 on:
   push:
     branches:
-      - 'QA'
+      - 'UAT'
   pull_request:
     branches:
-      - 'QA'
+      - 'UAT'
 
 jobs:
   Create-Final-Master:
@@ -86,6 +86,7 @@ jobs:
           # The commit message now includes the specific P# file created
           git commit -m "Auto-generated consolidated DDL phase script [skip ci]" || exit 0
           git push origin HEAD:${{ github.ref_name }}
+
 
 
 

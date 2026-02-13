@@ -22,7 +22,7 @@ jobs:
           SPRINT_FOLDER="${{ vars.SPRINT_NAME }}"
           TARGET_DIR="$RELEASE_DIR/$SPRINT_FOLDER"
           DEPLOY_DIR="$TARGET_DIR/Deploy"
-          mkdir -p "$TARGET_DIR"
+          mkdir -p "$DEPLOY_DIR"
 
           # Identify all relevant changes in one go
           if [ "${{ github.event_name }}" == "pull_request" ]; then
@@ -87,3 +87,4 @@ jobs:
           # The commit message now includes the specific P# file created
           git commit -m "Auto-generated consolidated DDL phase script [skip ci]" || exit 0
           git push origin HEAD:${{ github.ref_name }}
+

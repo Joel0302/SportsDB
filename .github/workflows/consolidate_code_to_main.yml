@@ -21,16 +21,17 @@ jobs:
           RELEASE_DIR="RELEASE_SCRIPTS"
           SPRINT_FOLDER="${{ vars.SPRINT_NAME }}"
           TARGET_DIR="$RELEASE_DIR/$SPRINT_FOLDER"
+          DEPLOY_DIR="$TARGET_DIR/Deploy"
           mkdir -p "$TARGET_DIR"
 
-          # 1. Identify ALL relevant changes in one go
+          # Identify all relevant changes in one go
           if [ "${{ github.event_name }}" == "pull_request" ]; then
             DIFF_REF="origin/${{ github.base_ref }}...HEAD"
           else
             DIFF_REF="HEAD^ HEAD"
           fi
 
-          # Capture changes for folders AND specific files
+          # Capture changes for folders and specific files
           CHANGED_FILES=$(git diff --name-only $DIFF_REF -- \
             'DBO_WINGSPAN_ANALYTICS/VIEWS/*.sql' \
             'BI_WINGSPAN_ANALYTICS/*.sql' \
@@ -39,21 +40,21 @@ jobs:
             "$TARGET_DIR/Adhoc_Scripts.sql" \
             "$TARGET_DIR/Grants.sql" || true)
 
-          # 2. Proceed ONLY if there is at least one relevant change
+          # Proceed only if there is at least one relevant change
           if [ -n "$CHANGED_FILES" ]; then
             # Versioning logic: Count existing P files to determine the next number
-            EXISTING_COUNT=$(ls "$TARGET_DIR"/DDL_CONSOLIDATED_P*.sql 2>/dev/null | wc -l)
+            EXISTING_COUNT=$(ls "$DEPLOY_DIR"/DDL_CONSOLIDATED_V*.sql 2>/dev/null | wc -l)
             NEXT_VAL=$((EXISTING_COUNT + 1))
-            MASTER_PATH="$TARGET_DIR/DDL_CONSOLIDATED_P${NEXT_VAL}.sql"
+            MASTER_PATH="$DEPLOY_DIR/DDL_CONSOLIDATED_V${NEXT_VAL}.sql"
 
-            # A. ALWAYS TRY ADHOC FIRST (but only if it actually changed)
+            # A. Always try adhoc first (but only if it actually changed)
             if echo "$CHANGED_FILES" | grep -q "Adhoc_Scripts.sql"; then
                echo -e "\n-- SECTION: ADHOC SCRIPTS --" >> "$MASTER_PATH"
                cat "$TARGET_DIR/Adhoc_Scripts.sql" >> "$MASTER_PATH"
                echo -e "\n" >> "$MASTER_PATH"
             fi
 
-            # B. ADD FOLDER/FILE CHANGES (Views, BI, STG, etc.)
+            # B. add folder/file changes (Views, BI, STG, etc.)
             echo -e "\n-- SECTION: FOLDER/FILE CHANGES --" >> "$MASTER_PATH"
             for file in $CHANGED_FILES; do
               # Skip Adhoc and Grants in this loop so they don't repeat
@@ -67,7 +68,7 @@ jobs:
               fi
             done
 
-            # C. ALWAYS TRY GRANTS LAST (but only if it actually changed)
+            # C. Always try grants last (but only if it actually changed)
             if echo "$CHANGED_FILES" | grep -q "Grants.sql"; then
                echo -e "\n-- SECTION: GRANTS --" >> "$MASTER_PATH"
                cat "$TARGET_DIR/Grants.sql" >> "$MASTER_PATH"
@@ -86,8 +87,3 @@ jobs:
           # The commit message now includes the specific P# file created
           git commit -m "Auto-generated consolidated DDL phase script [skip ci]" || exit 0
           git push origin HEAD:${{ github.ref_name }}
-
-
-
-
-

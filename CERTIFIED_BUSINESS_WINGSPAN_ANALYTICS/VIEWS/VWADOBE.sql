@@ -1,2 +1,2 @@
 Create or replace certifiedview.VWsample
-select 'mario' from nametable; 
+select 'mario' from nametable2; 

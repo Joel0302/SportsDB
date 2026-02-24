@@ -19,15 +19,11 @@ jobs:
       - name: Generate Master Script
         run: |
           RELEASE_DIR="RELEASE_SCRIPTS"
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            SPRINT_FOLDER="${{ github.head_ref }}"
-          else
-            SPRINT_FOLDER=$(git log -1 --pretty=%D | sed -E 's/.*origin\///; s/,.*//')
+          SPRINT_FOLDER="${{ github.head_ref }}"
           fi
           #SPRINT_FOLDER="${{ vars.SPRINT_NAME }}"
           TARGET_DIR="$RELEASE_DIR/$SPRINT_FOLDER"
           mkdir -p "$TARGET_DIR"
-
           # Identify all relevant changes in one go
           if [ "${{ github.event_name }}" == "pull_request" ]; then
             DIFF_REF="origin/${{ github.base_ref }}...HEAD"
@@ -93,3 +89,4 @@ jobs:
           # The commit message now includes the specific V# file created
           git commit -m "Auto-generated consolidated DDL phase script [skip ci]" || exit 0
           git push origin HEAD:${{ github.ref_name }}
+

@@ -20,7 +20,6 @@ jobs:
         run: |
           RELEASE_DIR="RELEASE_SCRIPTS"
           SPRINT_FOLDER="${{ github.head_ref }}"
-          fi
           #SPRINT_FOLDER="${{ vars.SPRINT_NAME }}"
           TARGET_DIR="$RELEASE_DIR/$SPRINT_FOLDER"
           mkdir -p "$TARGET_DIR"
@@ -89,4 +88,5 @@ jobs:
           # The commit message now includes the specific V# file created
           git commit -m "Auto-generated consolidated DDL phase script [skip ci]" || exit 0
           git push origin HEAD:${{ github.ref_name }}
+
 

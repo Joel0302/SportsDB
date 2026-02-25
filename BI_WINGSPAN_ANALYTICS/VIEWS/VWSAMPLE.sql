@@ -1,6 +1,6 @@
-CREATE VIEW BI_SCHEMA.ActiveUser AS
+CREATE VIEW BI_SCHEMA.ActiveUsers AS
 SELECT 
-    UserIdentities, 
+    UserIdentities , 
     UserAddress,
     UserName , 
     Email, 

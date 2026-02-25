@@ -46,12 +46,16 @@ jobs:
             NEXT_VAL=$((EXISTING_COUNT + 1))
             MASTER_PATH="$TARGET_DIR/DDL_Scripts_2026-W04_V${NEXT_VAL}.sql"
 
-            # Process all Adhoc scripts dynamically
-            if echo "$CHANGED_FILES" | grep -q "Adhoc_Scripts"; then
+            ADHOC_CHANGES=$(echo "$CHANGED_FILES" | grep "Adhoc_Scripts" || true)
+            if [ -n "$ADHOC_CHANGES" ]; then
                 echo -e "\n-- SECTION: ADHOC SCRIPTS --" >> "$MASTER_PATH"
-                # This appends all files matching the pattern at once
-                cat $TARGET_DIR/Adhoc_Scripts*.sql >> "$MASTER_PATH"
-                echo -e "\n" >> "$MASTER_PATH"
+                for file in $ADHOC_CHANGES; do
+                    if [ -f "$file" ]; then
+                        echo -e "-- Source: $file --" >> "$MASTER_PATH"
+                        cat "$file" >> "$MASTER_PATH"
+                        echo -e "\n" >> "$MASTER_PATH"
+                    fi
+                done
             fi
             
 
@@ -59,9 +63,10 @@ jobs:
             echo -e "\n-- SECTION: FOLDER/FILE CHANGES --" >> "$MASTER_PATH"
             for file in $CHANGED_FILES; do
               # Skip Adhoc and Grants in this loop so they don't repeat
-              if [[ "$file" == *"Adhoc_Scripts" ]] || [[ "$file" == *"Grants.sql" ]]; then
+              if [[ "$file" == *"Adhoc_Scripts"* ]] || [[ "$file" == *"Grants.sql"* ]]; then
                 continue
               fi
+
               if [ -f "$file" ]; then
                 echo -e "-- Source: $file --" >> "$MASTER_PATH"
                 cat "$file" >> "$MASTER_PATH"
@@ -88,6 +93,7 @@ jobs:
           # The commit message now includes the specific V# file created
           git commit -m "Auto-generated consolidated DDL phase script [skip ci]" || exit 0
           git push origin HEAD:${{ github.ref_name }}
+
 
 
 

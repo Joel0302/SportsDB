@@ -25,7 +25,7 @@ jobs:
             SPRINT_FOLDER_NAME="${{ github.head_ref }}"
           fi
           echo "SPRINT_FOLDER=$SPRINT_FOLDER_NAME" >> $GITHUB_ENV
-          echo "Print SPRINT_FOLDER"
+          echo "Print $SPRINT_FOLDER"
           TARGET_DIR="$RELEASE_DIR/$SPRINT_FOLDER"
           mkdir -p "$TARGET_DIR"
           # Identify all relevant changes in one go
@@ -98,6 +98,7 @@ jobs:
           # The commit message now includes the specific V# file created
           git commit -m "Auto-generated consolidated DDL phase script [skip ci]" || exit 0
           git push origin HEAD:${{ github.ref_name }}
+
 
 
 

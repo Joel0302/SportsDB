@@ -26,7 +26,8 @@ jobs:
             echo "Print $SPRINT_FOLDER"
           else
             # For push events, extract the branch name from the full ref
-             SPRINT_FOLDER="${{ github.ref##refs/heads/ }}"
+             FULL_REF="${{ github.ref }}"
+             SPRINT_FOLDER="${FULL_REF#refs/heads/}"
              echo "Print $SPRINT_FOLDER"
           fi
          

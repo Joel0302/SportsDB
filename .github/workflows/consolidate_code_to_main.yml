@@ -26,8 +26,7 @@ jobs:
             echo "Print $SPRINT_FOLDER"
           else
             # For push events, extract the branch name from the full ref
-             REF="${{ github.ref }}"
-             SPRINT_FOLDER="${REF#refs/heads/}"
+             SPRINT_FOLDER="${{ github.ref##refs/heads/ }}"
              echo "Print $SPRINT_FOLDER"
           fi
          
@@ -98,6 +97,7 @@ jobs:
           # The commit message now includes the specific V# file created
           git commit -m "Auto-generated consolidated DDL phase script [skip ci]" || exit 0
           git push origin HEAD:${{ github.ref_name }}
+
 
 
 

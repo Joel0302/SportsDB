@@ -20,7 +20,11 @@ jobs:
         run: |
           RELEASE_DIR="RELEASE_SCRIPTS"
           #SPRINT_FOLDER="${{ github.head_ref }}"
-          SPRINT_FOLDER="${{ vars.SPRINT_NAME }}"
+          #SPRINT_FOLDER="${{ vars.SPRINT_NAME }}"
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            SPRINT_FOLDER_NAME="${{ github.head_ref }}"
+          fi
+          echo "SPRINT_FOLDER=$SPRINT_FOLDER_NAME" >> $GITHUB_ENV
           TARGET_DIR="$RELEASE_DIR/$SPRINT_FOLDER"
           mkdir -p "$TARGET_DIR"
           # Identify all relevant changes in one go
@@ -93,4 +97,5 @@ jobs:
           # The commit message now includes the specific V# file created
           git commit -m "Auto-generated consolidated DDL phase script [skip ci]" || exit 0
           git push origin HEAD:${{ github.ref_name }}
+
 

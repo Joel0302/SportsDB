@@ -1,1 +1,2 @@
-alter table tablename;
+alter table tablename
+  set columnname=null;

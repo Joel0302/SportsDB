@@ -1,10 +1,11 @@
-CREATE VIEW BI_SCHEMA.ActiveUsers AS
+CREATE VIEW BI_SCHEMA.ActiveUser AS
 SELECT 
     UserIdentities , 
-    UserAddress,
-    UserName , 
+    UserAddresses,
+    UserNames , 
     Email, 
-    LoginDate
+    LoginDate,
+    Logout
 FROM 
     DBO_SCHEMA.Users
 WHERE 

@@ -78,10 +78,12 @@ jobs:
             done
           else
             # Fallback: If no Adhoc scripts changed, put folder/grants in one script
-            if [ -n "$OTHER_CHANGES" ] || [ "$HAS_GRANTS" == "true" ]; then
+            if [ -n "$(echo "$OTHER_CHANGES" | tr -d '[:space:]')" ] || [ "$HAS_GRANTS" == "true" ]; then
               MASTER_PATH="$TARGET_DIR/DDL_Scripts_2026-W04_V${NEXT_VAL}.sql"
               for f in $OTHER_CHANGES; do [ -f "$f" ] && cat "$f" >> "$MASTER_PATH"; done
               [ "$HAS_GRANTS" == "true" ] && cat "$TARGET_DIR/Grants.sql" >> "$MASTER_PATH"
+            else
+             echo "No relevant SQL file changes detected. Skipping script generation."
             fi
           fi
 
@@ -93,4 +95,5 @@ jobs:
           git add .
           git commit -m "Auto-generated consolidated DDL phase scripts [skip ci]" || exit 0
           git push origin HEAD:${{ github.ref_name }}
+
 

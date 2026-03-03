@@ -1,2 +1,2 @@
-Create or replace certifiedview.VWsample
+Create or replace certifiedview.VWsampleomni
 select 'mario' from nametable2; 

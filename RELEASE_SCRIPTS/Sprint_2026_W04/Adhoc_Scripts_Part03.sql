@@ -1,2 +1,2 @@
 Alter table tablename
-set column1=whatsapp;
+set column1=meta;

@@ -42,8 +42,8 @@ jobs:
 
           # 2. Categorize and Sort
           # sort ensures Adhoc_Scripts.sql is processed before Adhoc_Scripts_part02.sql
-          ADHOC_LIST=$(echo "$CHANGED_FILES" | grep "Adhoc_Scripts" | sort || echo "")
-          OTHER_CHANGES=$(echo "$CHANGED_FILES" | grep -vE "Adhoc_Scripts|Grants.sql" || echo "")
+          ADHOC_LIST=$(echo "$CHANGED_FILES" | grep "Adhoc_Scripts" | sort || true)
+          OTHER_CHANGES=$(echo "$CHANGED_FILES" | grep -vE "Adhoc_Scripts|Grants.sql" || true)
           HAS_GRANTS=$(echo "$CHANGED_FILES" | grep -q "Grants.sql" && echo "true" || echo "false")
 
           # 3. Versioning Setup
@@ -78,7 +78,7 @@ jobs:
             done
           else
             # Fallback: If no Adhoc scripts changed, put folder/grants in one script
-            if [ -n "$(echo "$OTHER_CHANGES" | tr -d '[:space:]')" ] || [ "$HAS_GRANTS" == "true" ]; then
+            if [ -n "$OTHER_CHANGES" ] || [ "$HAS_GRANTS" == "true" ]; then
               MASTER_PATH="$TARGET_DIR/DDL_Scripts_2026-W04_V${NEXT_VAL}.sql"
               for f in $OTHER_CHANGES; do [ -f "$f" ] && cat "$f" >> "$MASTER_PATH"; done
               [ "$HAS_GRANTS" == "true" ] && cat "$TARGET_DIR/Grants.sql" >> "$MASTER_PATH"
@@ -95,5 +95,6 @@ jobs:
           git add .
           git commit -m "Auto-generated consolidated DDL phase scripts [skip ci]" || exit 0
           git push origin HEAD:${{ github.ref_name }}
+
 
 

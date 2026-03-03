@@ -1,5 +1,5 @@
 alter table tablename1
-  set columnname=null;
+  set columnnames=null;
 
 alter table tablename5
   set columnname=instaid;

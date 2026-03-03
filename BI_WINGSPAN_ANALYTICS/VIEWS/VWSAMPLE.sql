@@ -5,7 +5,7 @@ SELECT
     UserNames , 
     Email, 
     LoginDate,
-    LogoutDate
+    Logout
 FROM 
     DBO_SCHEMA.Users
 WHERE 

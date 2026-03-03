@@ -1,2 +1,2 @@
-Create or replace certifiedview.vwomni
+Create or replace certifiedview.vwadobe
 select 'mario' from nametable2; 

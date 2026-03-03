@@ -1,2 +1,2 @@
 Alter table tablename
-set column1=null;
+set column1=column2;

@@ -1,5 +1,6 @@
+
 ALTER TABLE dbo.Employees 
-ALTER COLUMN LastName VARCHAR(2000);
+ALTER COLUMN LastName VARCHAR(5000);
 
 
 ALTER TABLE dbo.Employees 
@@ -20,5 +21,6 @@ CREATE TABLE STG_HIST_SCHEMA.Stg_Hist_Employees (
     LastName VARCHAR(100),
     Email VARCHAR(255),
     Salary VARCHAR(50),                    
-    LastModifiedDate VARCHAR(50)
+    LastModifiedDate VARCHAR(150)
   );
+

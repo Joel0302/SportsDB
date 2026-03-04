@@ -54,6 +54,11 @@ jobs:
           LOOP_COUNT=0
           if [ -n "$ADHOC_LIST" ]; then
             for adhoc_file in $ADHOC_LIST; do
+              # CRITICAL FIX: Check if the file exists before processing
+              if [ ! -f "$adhoc_file" ]; then
+                echo "Skipping $adhoc_file: File does not exist (it may have been deleted or moved)."
+                continue
+              fi
               CURRENT_V=$((NEXT_VAL + LOOP_COUNT))
               MASTER_PATH="$TARGET_DIR/DDL_Scripts_2026-W04_V${CURRENT_V}.sql"
               
@@ -95,6 +100,7 @@ jobs:
           git add .
           git commit -m "Auto-generated consolidated DDL phase scripts [skip ci]" || exit 0
           git push origin HEAD:${{ github.ref_name }}
+
 
 
 

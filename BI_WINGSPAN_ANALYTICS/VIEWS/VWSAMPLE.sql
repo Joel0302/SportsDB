@@ -3,7 +3,7 @@ SELECT
     UserIdentities , 
     UserAddresses,
     UserNames , 
-    Email, 
+    Emailaddress, 
     LoginDate,
     Logout
 FROM 

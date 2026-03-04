@@ -72,6 +72,10 @@ jobs:
           if [ -n "$ADHOC_LIST" ]; then
             echo "Processing Adhoc List..."
             for adhoc_file in $ADHOC_LIST; do
+              if [ ! -f "$adhoc_file" ]; then
+                echo "Skipping $adhoc_file: File does not exist (it may have been deleted or moved)."
+                continue
+              fi
               CURRENT_V=$((NEXT_VAL + LOOP_COUNT))
               MASTER_PATH="$TARGET_DIR/DDL_Scripts_2026-W04_V${CURRENT_V}.sql"
               echo "Creating $MASTER_PATH from $adhoc_file"
@@ -118,4 +122,5 @@ jobs:
           git add .
           git commit -m "Auto-generated consolidated DDL phase scripts [skip ci]" || exit 0
           git push origin HEAD:${{ github.ref_name }}
+
 

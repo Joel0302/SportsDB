@@ -1,6 +1,6 @@
 
 ALTER TABLE dbo.Employees 
-ALTER COLUMN LastName VARCHAR(5000);
+ALTER COLUMN FirstName VARCHAR(5000);
 
 
 ALTER TABLE dbo.Employees 

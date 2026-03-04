@@ -18,17 +18,23 @@ jobs:
 
       - name: Generate Master Script
         run: |
+          set -x
+
+          echo "--- CHECKPOINT: Initialization ---" 
           RELEASE_DIR="RELEASE_SCRIPTS"
           SPRINT_FOLDER="${{ vars.SPRINT_NAME }}"
           TARGET_DIR="$RELEASE_DIR/$SPRINT_FOLDER"
           mkdir -p "$TARGET_DIR"
+          
 
           # 1. Identify Changes
+          echo "--- CHECKPOINT: Identifying Changes ---"
           if [ "${{ github.event_name }}" == "pull_request" ]; then
             DIFF_REF="origin/${{ github.base_ref }}...HEAD"
           else
             DIFF_REF="HEAD^ HEAD"
           fi
+          echo "Using DIFF_REF: $DIFF_REF"
 
           CHANGED_FILES=$(git diff --name-only $DIFF_REF -- \
             'DBO_WINGSPAN_ANALYTICS/VIEWS/*.sql' \
@@ -42,20 +48,33 @@ jobs:
 
           # 2. Categorize and Sort
           # sort ensures Adhoc_Scripts.sql is processed before Adhoc_Scripts_part02.sql
-          ADHOC_LIST=$(echo "$CHANGED_FILES" | grep "Adhoc_Scripts" | sort || true)
-          OTHER_CHANGES=$(echo "$CHANGED_FILES" | grep -vE "Adhoc_Scripts|Grants.sql" || true)
-          HAS_GRANTS=$(echo "$CHANGED_FILES" | grep -q "Grants.sql" && echo "true" || echo "false")
+          echo "--- CHECKPOINT: Categorizing ---"
+          if [ -n "$CHANGED_FILES" ]; then
+            ADHOC_LIST=$(echo "$CHANGED_FILES" | grep "Adhoc_Scripts" | sort || true)
+            OTHER_CHANGES=$(echo "$CHANGED_FILES" | grep -vE "Adhoc_Scripts|Grants.sql" || true)
+            HAS_GRANTS=$(echo "$CHANGED_FILES" | grep -q "Grants.sql" && echo "true" || echo "false")
+          else
+            echo "No files found in git diff."
+            ADHOC_LIST=""
+            OTHER_CHANGES=""
+            HAS_GRANTS="false"
+          fi  
 
           # 3. Versioning Setup
+          echo "--- CHECKPOINT: Versioning ---"
           EXISTING_COUNT=$(ls "$TARGET_DIR"/DDL_Scripts_2026-W04_V*.sql 2>/dev/null | wc -l)
           NEXT_VAL=$((EXISTING_COUNT + 1))
+          echo "Next version will be: V${NEXT_VAL}"
 
           # 4. Generate Scripts
+          echo "--- CHECKPOINT: Script Generation ---"
           LOOP_COUNT=0
           if [ -n "$ADHOC_LIST" ]; then
+            echo "Processing Adhoc List..."
             for adhoc_file in $ADHOC_LIST; do
               CURRENT_V=$((NEXT_VAL + LOOP_COUNT))
               MASTER_PATH="$TARGET_DIR/DDL_Scripts_2026-W04_V${CURRENT_V}.sql"
+              echo "Creating $MASTER_PATH from $adhoc_file"
               
               # Add the Adhoc content
               echo -e "-- SECTION: ADHOC --\n-- Source: $adhoc_file --" >> "$MASTER_PATH"
@@ -64,12 +83,14 @@ jobs:
               # Only for the very first file in the loop, bundle other changes and grants
               if [ $LOOP_COUNT -eq 0 ]; then
                 if [ -n "$OTHER_CHANGES" ]; then
+                  echo "Adding Other Changes to first file..."
                   echo -e "\n-- SECTION: FOLDER CHANGES --" >> "$MASTER_PATH"
                   for f in $OTHER_CHANGES; do 
                     [ -f "$f" ] && cat "$f" >> "$MASTER_PATH" && echo -e "\n" >> "$MASTER_PATH"
                   done
                 fi
                 if [ "$HAS_GRANTS" == "true" ]; then
+                  echo "Adding Grants to first file..."
                   echo -e "\n-- SECTION: GRANTS --" >> "$MASTER_PATH"
                   cat "$TARGET_DIR/Grants.sql" >> "$MASTER_PATH"
                 fi
@@ -77,13 +98,17 @@ jobs:
               LOOP_COUNT=$((LOOP_COUNT + 1))
             done
           else
+            echo "No Adhoc scripts, checking Folder/Grants fallback..."
             # Fallback: If no Adhoc scripts changed, put folder/grants in one script
             if [ -n "$OTHER_CHANGES" ] || [ "$HAS_GRANTS" == "true" ]; then
+              echo "Creating Fallback Master: $MASTER_PATH"
               MASTER_PATH="$TARGET_DIR/DDL_Scripts_2026-W04_V${NEXT_VAL}.sql"
               for f in $OTHER_CHANGES; do [ -f "$f" ] && cat "$f" >> "$MASTER_PATH"; done
               [ "$HAS_GRANTS" == "true" ] && cat "$TARGET_DIR/Grants.sql" >> "$MASTER_PATH"
             fi
           fi
+          echo "--- CHECKPOINT: Finished Generate Step ---"
+          set -x
 
       - name: Push changes
         if: github.event_name == 'push'
@@ -93,3 +118,4 @@ jobs:
           git add .
           git commit -m "Auto-generated consolidated DDL phase scripts [skip ci]" || exit 0
           git push origin HEAD:${{ github.ref_name }}
+

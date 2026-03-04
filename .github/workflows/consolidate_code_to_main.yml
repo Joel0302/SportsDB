@@ -18,7 +18,6 @@ jobs:
 
       - name: Generate Master Script
         run: |
-          set +e
           RELEASE_DIR="RELEASE_SCRIPTS"
           SPRINT_FOLDER="${{ vars.SPRINT_NAME }}"
           TARGET_DIR="$RELEASE_DIR/$SPRINT_FOLDER"
@@ -43,18 +42,9 @@ jobs:
 
           # 2. Categorize and Sort
           # sort ensures Adhoc_Scripts.sql is processed before Adhoc_Scripts_part02.sql
-          if [ -n "$CHANGED_FILES" ]; then
-            ADHOC_LIST=$(echo "$CHANGED_FILES" | grep "Adhoc_Scripts" | sort || true)
-            OTHER_CHANGES=$(echo "$CHANGED_FILES" | grep -vE "Adhoc_Scripts|Grants.sql" || true)
-            HAS_GRANTS=$(echo "$CHANGED_FILES" | grep -q "Grants.sql" && echo "true" || echo "false")
-          else
-            ADHOC_LIST=""
-            OTHER_CHANGES=""
-            HAS_GRANTS="false"
-          fi
-          #ADHOC_LIST=$(echo "$CHANGED_FILES" | grep "Adhoc_Scripts" | sort || true)
-          #OTHER_CHANGES=$(echo "$CHANGED_FILES" | grep -vE "Adhoc_Scripts|Grants.sql" || true)
-          #HAS_GRANTS=$(echo "$CHANGED_FILES" | grep -q "Grants.sql" && echo "true" || echo "false")
+          ADHOC_LIST=$(echo "$CHANGED_FILES" | grep "Adhoc_Scripts" | sort || true)
+          OTHER_CHANGES=$(echo "$CHANGED_FILES" | grep -vE "Adhoc_Scripts|Grants.sql" || true)
+          HAS_GRANTS=$(echo "$CHANGED_FILES" | grep -q "Grants.sql" && echo "true" || echo "false")
 
           # 3. Versioning Setup
           EXISTING_COUNT=$(ls "$TARGET_DIR"/DDL_Scripts_2026-W04_V*.sql 2>/dev/null | wc -l)
@@ -92,8 +82,6 @@ jobs:
               MASTER_PATH="$TARGET_DIR/DDL_Scripts_2026-W04_V${NEXT_VAL}.sql"
               for f in $OTHER_CHANGES; do [ -f "$f" ] && cat "$f" >> "$MASTER_PATH"; done
               [ "$HAS_GRANTS" == "true" ] && cat "$TARGET_DIR/Grants.sql" >> "$MASTER_PATH"
-            else
-             echo "No relevant SQL file changes detected. Skipping script generation."
             fi
           fi
 
@@ -105,8 +93,3 @@ jobs:
           git add .
           git commit -m "Auto-generated consolidated DDL phase scripts [skip ci]" || exit 0
           git push origin HEAD:${{ github.ref_name }}
-
-
-
-
-

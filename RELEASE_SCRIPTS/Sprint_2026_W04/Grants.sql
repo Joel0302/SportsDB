@@ -1,4 +1,0 @@
-GRANT USAGE ON SCHEMA DBO_SCHEMA TO developer_roles;
-
-GRANT CREATE ON SCHEMA DBO_SCHEMA TO seniortesters;
-

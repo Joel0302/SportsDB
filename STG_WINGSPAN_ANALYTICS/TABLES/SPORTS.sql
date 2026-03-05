@@ -4,5 +4,5 @@ create or replace stg_schema.stg_table2(
   name varchar(1000) ,
   age varchar(1000),
   Gender varchar(1000),
-  maidid varchar(255)
+  maidid varchar(1000)
   );

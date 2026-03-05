@@ -1,2 +1,2 @@
 create or replace view dbo.Vwsampleview
-select 'joelmario' from name where id is null;
+select 'joelmario' from name where id is not null;

@@ -6,6 +6,7 @@ on:
   pull_request:
     branches:
       - 'QA'
+    types: [opened, synchronize]  
 
 jobs:
   Create-Final-Master:
@@ -16,6 +17,21 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Check for Branch Creation
+        id: check_branch
+        run: |
+          # Check if this is a brand new branch creation event
+          if [[ "${{ github.event.created }}" == "true" ]]; then
+            echo "This is a branch creation event. Skipping."
+            echo "skip=true" >> $GITHUB_OUTPUT
+          # Check if the commit is the very first one with no changes
+          elif [[ "${{ github.event.before }}" == "0000000000000000000000000000000000000000" ]]; then
+            echo "No previous commit found. Skipping."
+            echo "skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi    
+
       - name: Generate Master Script
         run: |
           RELEASE_DIR="RELEASE_SCRIPTS"
@@ -23,13 +39,14 @@ jobs:
           TARGET_DIR="$RELEASE_DIR/$SPRINT_FOLDER"
           mkdir -p "$TARGET_DIR"
 
-          # 1. Identify Changes
+          # Identify all relevant changes in one go
           if [ "${{ github.event_name }}" == "pull_request" ]; then
             DIFF_REF="origin/${{ github.base_ref }}...HEAD"
           else
             DIFF_REF="HEAD^ HEAD"
           fi
-
+          
+          # Capture changes for folders and specific files   
           CHANGED_FILES=$(git diff --name-only $DIFF_REF -- \
             'DBO_WINGSPAN_ANALYTICS/VIEWS/*.sql' \
             'BI_WINGSPAN_ANALYTICS/VIEWS/*.sql' \
@@ -40,17 +57,16 @@ jobs:
             "$TARGET_DIR/Adhoc_Scripts*.sql" \
             "$TARGET_DIR/Grants.sql" || true)
 
-          # 2. Categorize and Sort
-          # sort ensures Adhoc_Scripts.sql is processed before Adhoc_Scripts_part02.sql
+          #Categorize and Sort
           ADHOC_LIST=$(echo "$CHANGED_FILES" | grep "Adhoc_Scripts" | sort || true)
           OTHER_CHANGES=$(echo "$CHANGED_FILES" | grep -vE "Adhoc_Scripts|Grants.sql" || true)
           HAS_GRANTS=$(echo "$CHANGED_FILES" | grep -q "Grants.sql" && echo "true" || echo "false")
 
-          # 3. Versioning Setup
-          EXISTING_COUNT=$(ls "$TARGET_DIR"/DDL_Scripts_2026-W04_V*.sql 2>/dev/null | wc -l)
+          #Versioning Setup
+          EXISTING_COUNT=$(ls "$TARGET_DIR"/DDL_Scripts_"${SPRINT_FOLDER}"_V*.sql 2>/dev/null | wc -l)
           NEXT_VAL=$((EXISTING_COUNT + 1))
 
-          # 4. Generate Scripts
+          #Generate Scripts
           LOOP_COUNT=0
           if [ -n "$ADHOC_LIST" ]; then
             for adhoc_file in $ADHOC_LIST; do
@@ -60,7 +76,7 @@ jobs:
                 continue
               fi
               CURRENT_V=$((NEXT_VAL + LOOP_COUNT))
-              MASTER_PATH="$TARGET_DIR/DDL_Scripts_2026-W04_V${CURRENT_V}.sql"
+              MASTER_PATH="$TARGET_DIR/DDL_Scripts_${SPRINT_FOLDER}_V${CURRENT_V}.sql"
               
               # Add the Adhoc content
               echo -e "-- SECTION: ADHOC --\n-- Source: $adhoc_file --" >> "$MASTER_PATH"
@@ -70,8 +86,12 @@ jobs:
               if [ $LOOP_COUNT -eq 0 ]; then
                 if [ -n "$OTHER_CHANGES" ]; then
                   echo -e "\n-- SECTION: FOLDER CHANGES --" >> "$MASTER_PATH"
-                  for f in $OTHER_CHANGES; do 
-                    [ -f "$f" ] && cat "$f" >> "$MASTER_PATH" && echo -e "\n" >> "$MASTER_PATH"
+                  for file in $OTHER_CHANGES; do 
+                    if [ -f "$file" ]; then
+                        echo -e "-- Source: $file --" >> "$MASTER_PATH"
+                        cat "$file" >> "$MASTER_PATH"
+                        echo -e "\n" >> "$MASTER_PATH"
+                    fi
                   done
                 fi
                 if [ "$HAS_GRANTS" == "true" ]; then
@@ -82,11 +102,23 @@ jobs:
               LOOP_COUNT=$((LOOP_COUNT + 1))
             done
           else
-            # Fallback: If no Adhoc scripts changed, put folder/grants in one script
+            #If no Adhoc scripts changed, put folder/grants in one script
             if [ -n "$OTHER_CHANGES" ] || [ "$HAS_GRANTS" == "true" ]; then
-              MASTER_PATH="$TARGET_DIR/DDL_Scripts_2026-W04_V${NEXT_VAL}.sql"
-              for f in $OTHER_CHANGES; do [ -f "$f" ] && cat "$f" >> "$MASTER_PATH"; done
-              [ "$HAS_GRANTS" == "true" ] && cat "$TARGET_DIR/Grants.sql" >> "$MASTER_PATH"
+              MASTER_PATH="$TARGET_DIR/DDL_Scripts_${SPRINT_FOLDER}_V${NEXT_VAL}.sql"
+              # Add Folder Changes with spacing
+              for file in $OTHER_CHANGES; do 
+                 if [ -f "$file" ]; then
+                    echo -e "-- Source: $file --" >> "$MASTER_PATH"
+                    cat "$file" >> "$MASTER_PATH"
+                    echo -e "\n" >> "$MASTER_PATH"
+                 fi
+              done
+              # Add Grants with spacing
+              if [ "$HAS_GRANTS" == "true" ] && [ -f "$TARGET_DIR/Grants.sql" ]; then
+                echo -e "-- SECTION: GRANTS --" >> "$MASTER_PATH"
+                cat "$TARGET_DIR/Grants.sql" >> "$MASTER_PATH"
+                echo -e "\n" >> "$MASTER_PATH"
+              fi
             else
              echo "No relevant SQL file changes detected. Skipping script generation."
             fi
@@ -98,9 +130,6 @@ jobs:
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add .
-          git commit -m "Auto-generated consolidated DDL phase scripts [skip ci]" || exit 0
+          # The commit message now includes the specific V# file created
+          git commit -m "Auto-generated consolidated DDL phase script [skip ci]" || exit 0
           git push origin HEAD:${{ github.ref_name }}
-
-
-
-

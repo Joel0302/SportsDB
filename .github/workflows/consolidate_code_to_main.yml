@@ -6,7 +6,6 @@ on:
   pull_request:
     branches:
       - 'QA'
-    types: [opened, synchronize]  
 
 jobs:
   Create-Final-Master:
@@ -16,21 +15,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
-      - name: Check for Branch Creation
-        id: check_branch
-        run: |
-          # Check if this is a brand new branch creation event
-          if [[ "${{ github.event.created }}" == "true" ]]; then
-            echo "This is a branch creation event. Skipping."
-            echo "skip=true" >> $GITHUB_OUTPUT
-          # Check if the commit is the very first one with no changes
-          elif [[ "${{ github.event.before }}" == "0000000000000000000000000000000000000000" ]]; then
-            echo "No previous commit found. Skipping."
-            echo "skip=true" >> $GITHUB_OUTPUT
-          else
-            echo "skip=false" >> $GITHUB_OUTPUT
-          fi    
 
       - name: Generate Master Script
         run: |
@@ -133,3 +117,4 @@ jobs:
           # The commit message now includes the specific V# file created
           git commit -m "Auto-generated consolidated DDL phase script [skip ci]" || exit 0
           git push origin HEAD:${{ github.ref_name }}
+

@@ -62,7 +62,16 @@ jobs:
 
           #Categorize and Sort
           ADHOC_LIST=$(echo "$CHANGED_FILES" | grep "Adhoc_Scripts" | sort -V || true)
-          OTHER_CHANGES=$(echo "$CHANGED_FILES" | grep -vE "Adhoc_Scripts|Grants.sql" || true)
+          
+          #OTHER_CHANGES=$(echo "$CHANGED_FILES" | grep -vE "Adhoc_Scripts|Grants.sql" || true)
+          STG_ONLY=$(echo "$CHANGED_FILES" | grep "STG_WINGSPAN_ANALYTICS" || true)
+          
+          #Extract everything else EXCEPT Adhoc, Grants, and the STG folder we already caught
+          REST=$(echo "$CHANGED_FILES" | grep -vE "Adhoc_Scripts|Grants.sql|STG_WINGSPAN_ANALYTICS" || true)
+          
+          #Combine them: STG first, then the rest
+          OTHER_CHANGES=$(echo -e "$STG_ONLY\n$REST" | sed '/^$/d' || true)
+
           HAS_GRANTS=$(echo "$CHANGED_FILES" | grep -q "Grants.sql" && echo "true" || echo "false")
 
           #Versioning Setup

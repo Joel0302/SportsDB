@@ -61,7 +61,7 @@ jobs:
             "$TARGET_DIR/Grants.sql" || true)
 
           #Categorize and Sort
-          ADHOC_LIST=$(echo "$CHANGED_FILES" | grep "Adhoc_Scripts" | sort || true)
+          ADHOC_LIST=$(echo "$CHANGED_FILES" | grep "Adhoc_Scripts" | sort -V || true)
           OTHER_CHANGES=$(echo "$CHANGED_FILES" | grep -vE "Adhoc_Scripts|Grants.sql" || true)
           HAS_GRANTS=$(echo "$CHANGED_FILES" | grep -q "Grants.sql" && echo "true" || echo "false")
 

@@ -1,2 +1,2 @@
 Create or replace certifiedview.vwadobe
-select 'mariojoel' from nametable2; 
+select 'mariojoelj' from nametable2; 

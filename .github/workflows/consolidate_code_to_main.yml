@@ -5,8 +5,7 @@ on:
       - 'QA'
   pull_request:
     branches:
-      - 'QA'
-    types: [opened, synchronize]  
+      - 'QA' 
 
 jobs:
   Create-Final-Master:
@@ -17,22 +16,26 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Check for Branch Creation
-        id: check_branch
+      - name: Check for Differences from Main
+        id: check_diff
         run: |
-          # Check if this is a brand new branch creation event
-          if [[ "${{ github.event.created }}" == "true" ]]; then
-            echo "This is a branch creation event. Skipping."
-            echo "skip=true" >> $GITHUB_OUTPUT
-          # Check if the commit is the very first one with no changes
-          elif [[ "${{ github.event.before }}" == "0000000000000000000000000000000000000000" ]]; then
-            echo "No previous commit found. Skipping."
+          # Fetch main so we have a reference point
+          git fetch origin main
+          
+          # Check if any SQL files are different between main and this new branch
+          # Replace the paths below with your actual folder names
+          DIFF=$(git diff --name-only origin/main...HEAD -- '*.sql' || true)
+
+          if [ -z "$DIFF" ]; then
+            echo "No new SQL changes compared to main. This is likely a new branch creation."
             echo "skip=true" >> $GITHUB_OUTPUT
           else
+            echo "New SQL changes detected. Proceeding..."
             echo "skip=false" >> $GITHUB_OUTPUT
-          fi    
+          fi  
 
       - name: Generate Master Script
+        if: steps.check_diff.outputs.skip != 'true'
         run: |
           RELEASE_DIR="RELEASE_SCRIPTS"
           SPRINT_FOLDER="${{ vars.SPRINT_NAME }}"

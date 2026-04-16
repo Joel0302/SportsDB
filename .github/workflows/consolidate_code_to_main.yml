@@ -16,18 +16,18 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Check for Differences from Main
+      - name: Check for Differences from master
         id: check_diff
         run: |
-          # Fetch main so we have a reference point
-          git fetch origin main
+          # Fetch master so we have a reference point
+          git fetch origin master
           
-          # Check if any SQL files are different between main and this new branch
+          # Check if any SQL files are different between master and this new branch
           # Replace the paths below with your actual folder names
-          DIFF=$(git diff --name-only origin/main...HEAD -- '*.sql' || true)
+          DIFF=$(git diff --name-only origin/master...HEAD || true)
 
           if [ -z "$DIFF" ]; then
-            echo "No new SQL changes compared to main. This is likely a new branch creation."
+            echo "No new SQL changes compared to master. This is likely a new branch creation."
             echo "skip=true" >> $GITHUB_OUTPUT
           else
             echo "New SQL changes detected. Proceeding..."
@@ -57,83 +57,65 @@ jobs:
             'CERTIFIED_BUSINESS_WINGSPAN_ANALYTICS/VIEWS/*.sql' \
             'CI_WINGSPAN_ANALYTICS/VIEWS/*.sql' \
             'MPARTICLE_WINGSPAN_INTEGRATION/VIEWS/*.sql' \
-            "$TARGET_DIR/Adhoc_Scripts*.sql" \
-            "$TARGET_DIR/Grants.sql" || true)
+            "$TARGET_DIR/DDL_V*/Adhoc_Scripts*.sql" \
+            "$TARGET_DIR/DDL_V*/Grants.sql" || true)
 
           #Categorize and Sort
           ADHOC_LIST=$(echo "$CHANGED_FILES" | grep "Adhoc_Scripts" | sort -V || true)
-          
-          #OTHER_CHANGES=$(echo "$CHANGED_FILES" | grep -vE "Adhoc_Scripts|Grants.sql" || true)
+        
           STG_ONLY=$(echo "$CHANGED_FILES" | grep "STG_WINGSPAN_ANALYTICS" || true)
           
-          #Extract everything else EXCEPT Adhoc, Grants, and the STG folder we already caught
-          REST=$(echo "$CHANGED_FILES" | grep -vE "Adhoc_Scripts|Grants.sql|STG_WINGSPAN_ANALYTICS" || true)
+          DBO_ONLY=$(echo "$CHANGED_FILES" | grep "DBO_WINGSPAN_ANALYTICS/VIEWS" || true)
           
-          #Combine them: STG first, then the rest
-          OTHER_CHANGES=$(echo -e "$STG_ONLY\n$REST" | sed '/^$/d' || true)
+          #Extract everything else EXCEPT Adhoc, Grants, and the STG folder we already caught
+          REST=$(echo "$CHANGED_FILES" | grep -vE "Adhoc_Scripts|Grants.sql|STG_WINGSPAN_ANALYTICS|DBO_WINGSPAN_ANALYTICS/VIEWS" || true)
+          
+          #Combining STG -> DBO -> REST
+          OTHER_CHANGES=$(echo -e "$STG_ONLY\n$DBO_ONLY\n$REST" | sed '/^$/d' || true)
 
           HAS_GRANTS=$(echo "$CHANGED_FILES" | grep -q "Grants.sql" && echo "true" || echo "false")
 
-          #Versioning Setup
-          EXISTING_COUNT=$(ls "$TARGET_DIR"/DDL_Scripts_"${SPRINT_FOLDER}"_V*.sql 2>/dev/null | wc -l)
-          NEXT_VAL=$((EXISTING_COUNT + 1))
+          if [ -n "$CHANGED_FILES" ]; then
+            
+            #Identify active version folder default to DDL_V1 if only outer files changed
+            ACTIVE_V_FOLDER=$(echo "$CHANGED_FILES" | grep -o "DDL_V[0-9]\+" | head -n 1)
+            [ -z "$ACTIVE_V_FOLDER" ] && ACTIVE_V_FOLDER="DDL_V1"
 
-          #Generate Scripts
-          LOOP_COUNT=0
-          if [ -n "$ADHOC_LIST" ]; then
-            for adhoc_file in $ADHOC_LIST; do
-              # CRITICAL FIX: Check if the file exists before processing
-              if [ ! -f "$adhoc_file" ]; then
-                echo "Skipping $adhoc_file: File does not exist (it may have been deleted or moved)."
-                continue
-              fi
-              CURRENT_V=$((NEXT_VAL + LOOP_COUNT))
-              MASTER_PATH="$TARGET_DIR/DDL_Scripts_${SPRINT_FOLDER}_V${CURRENT_V}.sql"
-              
-              # Add the Adhoc content
-              echo -e "-- SECTION: ADHOC --\n-- Source: $adhoc_file --" >> "$MASTER_PATH"
-              cat "$adhoc_file" >> "$MASTER_PATH"
+            VERSION_PATH="$TARGET_DIR/$ACTIVE_V_FOLDER"
+            mkdir -p "$VERSION_PATH"
+            MASTER_PATH="$VERSION_PATH/DDL_Consolidated_Script.sql"
 
-              # Only for the very first file in the loop, bundle other changes and grants
-              if [ $LOOP_COUNT -eq 0 ]; then
-                if [ -n "$OTHER_CHANGES" ]; then
-                  echo -e "\n-- SECTION: FOLDER CHANGES --" >> "$MASTER_PATH"
-                  for file in $OTHER_CHANGES; do 
-                    if [ -f "$file" ]; then
-                        echo -e "-- Source: $file --" >> "$MASTER_PATH"
-                        cat "$file" >> "$MASTER_PATH"
-                        echo -e "\n" >> "$MASTER_PATH"
-                    fi
-                  done
-                fi
-                if [ "$HAS_GRANTS" == "true" ]; then
-                  echo -e "\n-- SECTION: GRANTS --" >> "$MASTER_PATH"
-                  cat "$TARGET_DIR/Grants.sql" >> "$MASTER_PATH"
-                fi
-              fi
-              LOOP_COUNT=$((LOOP_COUNT + 1))
-            done
-          else
-            #If no Adhoc scripts changed, put folder/grants in one script
-            if [ -n "$OTHER_CHANGES" ] || [ "$HAS_GRANTS" == "true" ]; then
-              MASTER_PATH="$TARGET_DIR/DDL_Scripts_${SPRINT_FOLDER}_V${NEXT_VAL}.sql"
-              # Add Folder Changes with spacing
-              for file in $OTHER_CHANGES; do 
-                 if [ -f "$file" ]; then
-                    echo -e "-- Source: $file --" >> "$MASTER_PATH"
+            # Reset file with header
+            echo "-- Consolidated Script for $ACTIVE_V_FOLDER --" > "$MASTER_PATH"
+
+            # 2. ADHOC SCRIPTS (First)
+            if [ -f "$VERSION_PATH/Adhoc_Scripts.sql" ]; then
+                echo -e "\n-- SECTION: ADHOC SCRIPTS --" >> "$MASTER_PATH"
+                cat "$VERSION_PATH/Adhoc_Scripts.sql" >> "$MASTER_PATH"
+                echo -e "\n" >> "$MASTER_PATH"
+            fi
+
+            # 3. OUTER FOLDER CHANGES (STG -> DBO -> REST) - V1 ONLY
+            if [ "$ACTIVE_V_FOLDER" == "DDL_V1" ] && [ -n "$OTHER_CHANGES" ]; then
+                echo -e "\n-- SECTION: SCHEMA CHANGES (STG -> DBO -> REST) --" >> "$MASTER_PATH"
+                while IFS= read -r file; do
+                  # Ensure we only cat files that exist and are NOT the adhoc/grants in the subfolder
+                  if [ -f "$file" ] && [[ "$file" != *"$ACTIVE_V_FOLDER"* ]]; then
+                    echo "-- Source: $file --" >> "$MASTER_PATH"
                     cat "$file" >> "$MASTER_PATH"
                     echo -e "\n" >> "$MASTER_PATH"
-                 fi
-              done
-              # Add Grants with spacing
-              if [ "$HAS_GRANTS" == "true" ] && [ -f "$TARGET_DIR/Grants.sql" ]; then
-                echo -e "-- SECTION: GRANTS --" >> "$MASTER_PATH"
-                cat "$TARGET_DIR/Grants.sql" >> "$MASTER_PATH"
-                echo -e "\n" >> "$MASTER_PATH"
-              fi
-            else
-             echo "No relevant SQL file changes detected. Skipping script generation."
+                  fi
+                done <<< "$OTHER_CHANGES"
             fi
+
+            # 4. GRANTS (Last)
+            if [ -f "$VERSION_PATH/Grants.sql" ]; then
+                echo -e "\n-- SECTION: GRANTS --" >> "$MASTER_PATH"
+                cat "$VERSION_PATH/Grants.sql" >> "$MASTER_PATH"
+                echo -e "\n" >> "$MASTER_PATH"
+            fi
+            
+            echo "ACTIVE_FOLDER=$ACTIVE_V_FOLDER" >> $GITHUB_ENV
           fi
 
       - name: Push changes

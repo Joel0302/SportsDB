@@ -76,46 +76,48 @@ jobs:
           HAS_GRANTS=$(echo "$CHANGED_FILES" | grep -q "Grants.sql" && echo "true" || echo "false")
 
           if [ -n "$CHANGED_FILES" ]; then
+            # 1. Identify all unique version folders in this push
+            VERSION_FOLDERS=$(echo "$CHANGED_FILES" | grep -o "DDL_V[0-9]\+" | sort -u || true)
+            [ -z "$VERSION_FOLDERS" ] && VERSION_FOLDERS="DDL_V1"
+
+            # 2. Loop through each detected folder
+            for ACTIVE_V_FOLDER in $VERSION_FOLDERS; do
+              VERSION_PATH="$TARGET_DIR/$ACTIVE_V_FOLDER"
+              mkdir -p "$VERSION_PATH"
+              MASTER_PATH="$VERSION_PATH/DDL_Consolidated_Script.sql"
+
+              echo "-- Consolidated Script for $ACTIVE_V_FOLDER --" > "$MASTER_PATH"
+
+              # ADHOC SCRIPTS (First)
+              if [ -f "$VERSION_PATH/Adhoc_Scripts.sql" ]; then
+                  echo -e "\n-- SECTION: ADHOC SCRIPTS --" >> "$MASTER_PATH"
+                  cat "$VERSION_PATH/Adhoc_Scripts.sql" >> "$MASTER_PATH"
+                  echo -e "\n" >> "$MASTER_PATH"
+              fi
+
+              # OUTER FOLDER CHANGES (V1 ONLY)
+              if [ "$ACTIVE_V_FOLDER" == "DDL_V1" ] && [ -n "$OTHER_CHANGES" ]; then
+                  echo -e "\n-- SECTION: SCHEMA CHANGES (STG -> DBO -> REST) --" >> "$MASTER_PATH"
+                  while IFS= read -r file; do
+                    if [ -f "$file" ] && [[ "$file" != *"DDL_V"* ]]; then
+                      echo "-- Source: $file --" >> "$MASTER_PATH"
+                      cat "$file" >> "$MASTER_PATH"
+                      echo -e "\n" >> "$MASTER_PATH"
+                    fi
+                  done <<< "$OTHER_CHANGES"
+              fi
+
+              # GRANTS (Last)
+              if [ -f "$VERSION_PATH/Grants.sql" ]; then
+                  echo -e "\n-- SECTION: GRANTS --" >> "$MASTER_PATH"
+                  cat "$VERSION_PATH/Grants.sql" >> "$MASTER_PATH"
+                  echo -e "\n" >> "$MASTER_PATH"
+              fi
+              echo "Consolidated $ACTIVE_V_FOLDER"
+            done
             
-            #Identify active version folder default to DDL_V1 if only outer files changed
-            ACTIVE_V_FOLDER=$(echo "$CHANGED_FILES" | grep -o "DDL_V[0-9]\+" | head -n 1)
-            [ -z "$ACTIVE_V_FOLDER" ] && ACTIVE_V_FOLDER="DDL_V1"
-
-            VERSION_PATH="$TARGET_DIR/$ACTIVE_V_FOLDER"
-            mkdir -p "$VERSION_PATH"
-            MASTER_PATH="$VERSION_PATH/DDL_Consolidated_Script.sql"
-
-            # Reset file with header
-            echo "-- Consolidated Script for $ACTIVE_V_FOLDER --" > "$MASTER_PATH"
-
-            # 2. ADHOC SCRIPTS (First)
-            if [ -f "$VERSION_PATH/Adhoc_Scripts.sql" ]; then
-                echo -e "\n-- SECTION: ADHOC SCRIPTS --" >> "$MASTER_PATH"
-                cat "$VERSION_PATH/Adhoc_Scripts.sql" >> "$MASTER_PATH"
-                echo -e "\n" >> "$MASTER_PATH"
-            fi
-
-            # 3. OUTER FOLDER CHANGES (STG -> DBO -> REST) - V1 ONLY
-            if [ "$ACTIVE_V_FOLDER" == "DDL_V1" ] && [ -n "$OTHER_CHANGES" ]; then
-                echo -e "\n-- SECTION: SCHEMA CHANGES (STG -> DBO -> REST) --" >> "$MASTER_PATH"
-                while IFS= read -r file; do
-                  # Ensure we only cat files that exist and are NOT the adhoc/grants in the subfolder
-                  if [ -f "$file" ] && [[ "$file" != *"$ACTIVE_V_FOLDER"* ]]; then
-                    echo "-- Source: $file --" >> "$MASTER_PATH"
-                    cat "$file" >> "$MASTER_PATH"
-                    echo -e "\n" >> "$MASTER_PATH"
-                  fi
-                done <<< "$OTHER_CHANGES"
-            fi
-
-            # 4. GRANTS (Last)
-            if [ -f "$VERSION_PATH/Grants.sql" ]; then
-                echo -e "\n-- SECTION: GRANTS --" >> "$MASTER_PATH"
-                cat "$VERSION_PATH/Grants.sql" >> "$MASTER_PATH"
-                echo -e "\n" >> "$MASTER_PATH"
-            fi
+            echo "ACTIVE_FOLDER=Folder-Update" >> $GITHUB_ENV
             
-            echo "ACTIVE_FOLDER=$ACTIVE_V_FOLDER" >> $GITHUB_ENV
           fi
 
       - name: Push changes

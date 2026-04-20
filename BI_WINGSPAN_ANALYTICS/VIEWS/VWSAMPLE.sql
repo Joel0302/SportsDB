@@ -2,7 +2,7 @@ CREATE VIEW BI_SCHEMA.ActiveUser AS
 SELECT 
     UserIdentities , 
     UserAddress,
-    UserNames , 
+    UserName , 
     Email, 
     LoginDateid,
     LogoutDate

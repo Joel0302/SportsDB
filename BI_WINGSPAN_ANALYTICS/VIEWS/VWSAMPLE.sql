@@ -7,6 +7,6 @@ SELECT
     LoginDateid,
     LogoutDate
 FROM 
-    DBO_SCHEMA.Users
+    DBO_SCHEMA.Usersid
 WHERE 
     IsActive = 1;

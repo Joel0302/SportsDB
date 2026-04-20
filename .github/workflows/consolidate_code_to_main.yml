@@ -83,7 +83,7 @@ jobs:
             for ACTIVE_V_FOLDER in $VERSION_FOLDERS; do
               VERSION_PATH="$TARGET_DIR/$ACTIVE_V_FOLDER"
               mkdir -p "$VERSION_PATH"
-              MASTER_PATH="$VERSION_PATH/DDL_Consolidated_Script.sql"
+              MASTER_PATH="$VERSION_PATH/DDL_Scripts_${SPRINT_FOLDER}.sql"
 
               echo "-- Consolidated Script for $ACTIVE_V_FOLDER --" > "$MASTER_PATH"
 

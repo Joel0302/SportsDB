@@ -57,8 +57,7 @@ jobs:
             'CERTIFIED_BUSINESS_WINGSPAN_ANALYTICS/VIEWS/*.sql' \
             'CI_WINGSPAN_ANALYTICS/VIEWS/*.sql' \
             'MPARTICLE_WINGSPAN_INTEGRATION/VIEWS/*.sql' \
-            "$TARGET_DIR/DDL_V*/Adhoc_Scripts*.sql" \
-            "$TARGET_DIR/DDL_V*/Grants.sql" || true)
+            '$TARGET_DIR/DDL_V*/*.sql' || true)
 
           #Categorize and Sort
           ADHOC_LIST=$(echo "$CHANGED_FILES" | grep "Adhoc_Scripts" | sort -V || true)

@@ -76,7 +76,7 @@ jobs:
 
           if [ -n "$CHANGED_FILES" ]; then
             # 1. Identify all unique version folders in this push
-            VERSION_FOLDERS=$(echo "$CHANGED_FILES" | grep -o "DDL_V[0-9]\+" | sort -u || true)
+            VERSION_FOLDERS=$(echo "$CHANGED_FILES" | grep -o "DDL_V[0-9]\+" | sort -V -u || true)
             LATEST_VERSION=$(echo "$VERSION_FOLDERS" | tail -n 1)
 
             # 2. Loop through each detected folder

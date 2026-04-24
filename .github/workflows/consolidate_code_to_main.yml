@@ -16,15 +16,15 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Check for Differences from main
+      - name: Check for Differences from master
         id: check_diff
         run: |
-          # Fetch main so we have a reference point
-          git fetch origin main
+          # Fetch master so we have a reference point
+          git fetch origin master
           
-          # Check if any SQL files are different between main and this new branch
+          # Check if any SQL files are different between master and this new branch
           # Replace the paths below with your actual folder names
-          DIFF=$(git diff --name-only origin/main...HEAD || true)
+          DIFF=$(git diff --name-only origin/master...HEAD || true)
 
           if [ -z "$DIFF" ]; then
             echo "No new SQL changes compared to master. This is likely a new branch creation."
@@ -79,7 +79,7 @@ jobs:
             VERSION_FOLDERS=$(echo "$CHANGED_FILES" | grep -o "DDL_V[0-9]\+" | sort -V -u || true)
             LATEST_VERSION=$(echo "$VERSION_FOLDERS" | tail -n 1)
 
-            # 2. Loop through each detected folder
+            #Loop through each detected folder
             for ACTIVE_V_FOLDER in $VERSION_FOLDERS; do
               VERSION_PATH="$TARGET_DIR/$ACTIVE_V_FOLDER"
               mkdir -p "$VERSION_PATH"
@@ -94,9 +94,9 @@ jobs:
                   echo -e "\n" >> "$MASTER_PATH"
               fi
 
-              # OUTER FOLDER CHANGES (V1 ONLY)
+              #OUTER FOLDER CHANGES
               if [ "$ACTIVE_V_FOLDER" == "$LATEST_VERSION" ] && [ -n "$OTHER_CHANGES" ]; then
-                  echo -e "\n-- SECTION: SCHEMA CHANGES (STG -> DBO -> REST) --" >> "$MASTER_PATH"
+                  echo -e "\n-- SECTION: SCHEMA CHANGES" >> "$MASTER_PATH"
                   while IFS= read -r file; do
                     if [ -f "$file" ] && [[ "$file" != *"DDL_V"* ]]; then
                       echo "-- Source: $file --" >> "$MASTER_PATH"
@@ -106,7 +106,7 @@ jobs:
                   done <<< "$OTHER_CHANGES"
               fi
 
-              # GRANTS (Last)
+              # GRANTS (LAST)
               if [ -f "$VERSION_PATH/Grants.sql" ]; then
                   echo -e "\n-- SECTION: GRANTS --" >> "$MASTER_PATH"
                   cat "$VERSION_PATH/Grants.sql" >> "$MASTER_PATH"
@@ -114,9 +114,9 @@ jobs:
               fi
               echo "Consolidated $ACTIVE_V_FOLDER"
             done
-            
-            echo "ACTIVE_FOLDER=Folder-Update" >> $GITHUB_ENV
-            
+           
+          else
+            echo "No relevant SQL file changes detected. Skipping script generation."  
           fi
 
       - name: Push changes

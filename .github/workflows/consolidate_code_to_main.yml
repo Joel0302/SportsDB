@@ -16,15 +16,15 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Check for Differences from master
+      - name: Check for Differences from main
         id: check_diff
         run: |
-          # Fetch master so we have a reference point
-          git fetch origin master
+          # Fetch main so we have a reference point
+          git fetch origin main
           
-          # Check if any SQL files are different between master and this new branch
+          # Check if any SQL files are different between main and this new branch
           # Replace the paths below with your actual folder names
-          DIFF=$(git diff --name-only origin/master...HEAD || true)
+          DIFF=$(git diff --name-only origin/main...HEAD || true)
 
           if [ -z "$DIFF" ]; then
             echo "No new SQL changes compared to master. This is likely a new branch creation."

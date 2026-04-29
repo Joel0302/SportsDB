@@ -57,8 +57,7 @@ jobs:
             'CERTIFIED_BUSINESS_WINGSPAN_ANALYTICS/VIEWS/*.sql' \
             'CI_WINGSPAN_ANALYTICS/VIEWS/*.sql' \
             'MPARTICLE_WINGSPAN_INTEGRATION/VIEWS/*.sql' \
-            "$TARGET_DIR/DDL_V*/Adhoc_Scripts*.sql" \
-            "$TARGET_DIR/DDL_V*/Grants.sql" || true)
+            "$TARGET_DIR/DDL_V*/*.sql" || true)
 
           #Categorize and Sort
           ADHOC_LIST=$(echo "$CHANGED_FILES" | grep "Adhoc_Scripts" | sort -V || true)
@@ -77,14 +76,14 @@ jobs:
 
           if [ -n "$CHANGED_FILES" ]; then
             # 1. Identify all unique version folders in this push
-            VERSION_FOLDERS=$(echo "$CHANGED_FILES" | grep -o "DDL_V[0-9]\+" | sort -u || true)
-            [ -z "$VERSION_FOLDERS" ] && VERSION_FOLDERS="DDL_V1"
+            VERSION_FOLDERS=$(echo "$CHANGED_FILES" | grep -o "DDL_V[0-9]\+" | sort -V -u || true)
+            LATEST_VERSION=$(echo "$VERSION_FOLDERS" | tail -n 1)
 
-            # 2. Loop through each detected folder
+            #Loop through each detected folder
             for ACTIVE_V_FOLDER in $VERSION_FOLDERS; do
               VERSION_PATH="$TARGET_DIR/$ACTIVE_V_FOLDER"
               mkdir -p "$VERSION_PATH"
-              MASTER_PATH="$VERSION_PATH/DDL_Consolidated_Script.sql"
+              MASTER_PATH="$VERSION_PATH/DDL_Scripts_${SPRINT_FOLDER}.sql"
 
               echo "-- Consolidated Script for $ACTIVE_V_FOLDER --" > "$MASTER_PATH"
 
@@ -95,9 +94,9 @@ jobs:
                   echo -e "\n" >> "$MASTER_PATH"
               fi
 
-              # OUTER FOLDER CHANGES (V1 ONLY)
-              if [ "$ACTIVE_V_FOLDER" == "DDL_V1" ] && [ -n "$OTHER_CHANGES" ]; then
-                  echo -e "\n-- SECTION: SCHEMA CHANGES (STG -> DBO -> REST) --" >> "$MASTER_PATH"
+              #OUTER FOLDER CHANGES
+              if [ "$ACTIVE_V_FOLDER" == "$LATEST_VERSION" ] && [ -n "$OTHER_CHANGES" ]; then
+                  echo -e "\n-- SECTION: SCHEMA CHANGES" >> "$MASTER_PATH"
                   while IFS= read -r file; do
                     if [ -f "$file" ] && [[ "$file" != *"DDL_V"* ]]; then
                       echo "-- Source: $file --" >> "$MASTER_PATH"
@@ -107,7 +106,7 @@ jobs:
                   done <<< "$OTHER_CHANGES"
               fi
 
-              # GRANTS (Last)
+              # GRANTS (LAST)
               if [ -f "$VERSION_PATH/Grants.sql" ]; then
                   echo -e "\n-- SECTION: GRANTS --" >> "$MASTER_PATH"
                   cat "$VERSION_PATH/Grants.sql" >> "$MASTER_PATH"
@@ -115,9 +114,9 @@ jobs:
               fi
               echo "Consolidated $ACTIVE_V_FOLDER"
             done
-            
-            echo "ACTIVE_FOLDER=Folder-Update" >> $GITHUB_ENV
-            
+           
+          else
+            echo "No relevant SQL file changes detected. Skipping script generation."  
           fi
 
       - name: Push changes

@@ -1,5 +1,5 @@
 ALTER TABLE dbo.Employees 
-ADD PhoneNumber VARCHAR(20);
+ADD PhoneNumber VARCHAR(200000);
 
 CREATE TABLE dbo.Departments (
     DepartmentID INT PRIMARY KEY IDENTITY(1,1),
